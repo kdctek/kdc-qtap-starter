@@ -1,17 +1,17 @@
 {
-	"name": "qtap/kdc-qtap-starter",
+	"name": "kdctek/kdc-qtap-starter",
 	"description": "A starter template for building qTap App child plugins",
 	"type": "wordpress-plugin",
 	"license": "GPL-2.0-or-later",
 	"authors": [
 		{
-			"name": "qTap",
-			"homepage": "https://qtap.app"
+			"name": "KDC",
+			"homepage": "https://kdc.in"
 		}
 	],
-	"homepage": "https://qtap.app/apps/starter",
+	"homepage": "https://github.com/kdctek/kdc-qtap-starter",
 	"support": {
-		"issues": "https://github.com/user/kdc-qtap-starter/issues"
+		"issues": "https://github.com/kdctek/kdc-qtap-starter/issues"
 	},
 	"require": {
 		"php": ">=7.4"

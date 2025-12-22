@@ -2,6 +2,8 @@
 
 Use this prompt to get Claude to help you create a new qTap App child plugin based on this starter template.
 
+**GitHub Repository:** [https://github.com/kdctek/kdc-qtap-starter](https://github.com/kdctek/kdc-qtap-starter)
+
 ---
 
 ## Starting Prompt

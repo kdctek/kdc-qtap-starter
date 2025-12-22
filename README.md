@@ -2,7 +2,8 @@
 
 A starter template for building [qTap App](https://qtap.app) child plugins. Use this as a foundation for creating your own qTap apps for WordPress and WooCommerce.
 
-**Author:** [KDC](https://kdc.in)
+**Author:** [KDC](https://kdc.in)  
+**GitHub:** [https://github.com/kdctek/kdc-qtap-starter](https://github.com/kdctek/kdc-qtap-starter)
 
 ## Features
 
@@ -156,6 +157,10 @@ zip -r kdc-qtap-starter.zip kdc-qtap-starter \
 
 ## Changelog
 
+### 1.0.2
+- Updated Plugin URI to GitHub repository
+- Added WordPress Tested up to 6.9
+
 ### 1.0.1
 - Fixed duplicate menu issue when multiple child plugins active without qTap App
 - Added shared fallback menu system (`kdc-qtap-shared-menu.php`)
@@ -172,7 +177,7 @@ GPL v2 or later
 
 - **Website:** [https://qtap.app](https://qtap.app)
 - **Documentation:** [https://qtap.app/docs](https://qtap.app/docs)
-- **GitHub Issues:** [Report bugs or request features](https://github.com/user/kdc-qtap-starter/issues)
+- **GitHub Issues:** [Report bugs or request features](https://github.com/kdctek/kdc-qtap-starter/issues)
 
 ---
 
@@ -180,7 +185,7 @@ GPL v2 or later
 
 1. **Clone the starter:**
    ```bash
-   git clone https://github.com/user/kdc-qtap-starter.git kdc-qtap-myapp
+   git clone https://github.com/kdctek/kdc-qtap-starter.git kdc-qtap-myapp
    cd kdc-qtap-myapp
    rm -rf .git
    git init
