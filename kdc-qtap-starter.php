@@ -3,7 +3,7 @@
  * Plugin Name:       qTap Starter
  * Plugin URI:        https://github.com/kdctek/kdc-qtap-starter
  * Description:       A starter template for building qTap App child plugins. Replace this with your app description.
- * Version:           1.0.6
+ * Version:           1.0.8
  * Author:            KDC
  * Author URI:        https://kdc.in
  * License:           GPL v2 or later
@@ -34,7 +34,7 @@ if ( defined( 'KDC_QTAP_STARTER_VERSION' ) ) {
 /**
  * Plugin constants.
  */
-define( 'KDC_QTAP_STARTER_VERSION', '1.0.6' );
+define( 'KDC_QTAP_STARTER_VERSION', '1.0.8' );
 define( 'KDC_QTAP_STARTER_PLUGIN_FILE', __FILE__ );
 define( 'KDC_QTAP_STARTER_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'KDC_QTAP_STARTER_PLUGIN_URL', plugin_dir_url( __FILE__ ) );

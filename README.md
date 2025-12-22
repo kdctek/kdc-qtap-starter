@@ -183,6 +183,16 @@ zip -r kdc-qtap-starter.zip kdc-qtap-starter \
 
 ## Changelog
 
+### 1.0.8
+- **FIX:** WordPress 6.7+ translation loading error (`_load_textdomain_just_in_time`)
+- Changed tabs initialization to lazy loading (only when needed)
+- Translations now load at proper time (after `init` action)
+
+### 1.0.7
+- Fixed confirmation dialog messages (cleaner single-line format)
+- Added documentation about `\n` in PHP strings (single vs double quotes)
+- Simplified Data Management warning messages
+
 ### 1.0.6
 - **CRITICAL FIX:** Fixed "Cannot redeclare" fatal error when multiple qTap apps installed
 - Wrapped all shared menu functions in `function_exists()` checks

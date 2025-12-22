@@ -58,7 +58,7 @@ class KDC_qTap_Starter_Admin {
 	 * @since 1.0.4
 	 * @var   array
 	 */
-	private $tabs = array();
+	private $tabs = null;
 
 	/**
 	 * Get the singleton instance.
@@ -79,29 +79,32 @@ class KDC_qTap_Starter_Admin {
 	 * @since 1.0.0
 	 */
 	private function __construct() {
-		$this->init_tabs();
 		$this->init_hooks();
 	}
 
 	/**
-	 * Initialize tabs.
+	 * Get tabs (lazy initialization to avoid early translation loading).
 	 *
-	 * @since 1.0.4
+	 * @since 1.0.8
+	 * @return array
 	 */
-	private function init_tabs() {
-		$this->tabs = array(
-			'general'       => __( 'General', 'kdc-qtap-starter' ),
-			'import-export' => __( 'Import / Export', 'kdc-qtap-starter' ),
-			'data'          => __( 'Data Management', 'kdc-qtap-starter' ),
-		);
+	private function get_tabs() {
+		if ( null === $this->tabs ) {
+			$this->tabs = array(
+				'general'       => __( 'General', 'kdc-qtap-starter' ),
+				'import-export' => __( 'Import / Export', 'kdc-qtap-starter' ),
+				'data'          => __( 'Data Management', 'kdc-qtap-starter' ),
+			);
 
-		/**
-		 * Filter the available tabs.
-		 *
-		 * @since 1.0.4
-		 * @param array $tabs Array of tab slug => label.
-		 */
-		$this->tabs = apply_filters( 'kdc_qtap_starter_admin_tabs', $this->tabs );
+			/**
+			 * Filter the available tabs.
+			 *
+			 * @since 1.0.4
+			 * @param array $tabs Array of tab slug => label.
+			 */
+			$this->tabs = apply_filters( 'kdc_qtap_starter_admin_tabs', $this->tabs );
+		}
+		return $this->tabs;
 	}
 
 	/**
@@ -183,7 +186,7 @@ class KDC_qTap_Starter_Admin {
 					'saved'         => __( 'Settings saved!', 'kdc-qtap-starter' ),
 					'error'         => __( 'An error occurred.', 'kdc-qtap-starter' ),
 					'confirmReset'  => __( 'Are you sure you want to reset all settings?', 'kdc-qtap-starter' ),
-					'confirmDelete' => __( 'WARNING: This will permanently delete ALL plugin data when you uninstall. This action cannot be undone. Are you sure?', 'kdc-qtap-starter' ),
+					'confirmDelete' => __( 'WARNING: This will permanently delete ALL plugin data when uninstalled. This cannot be undone. Continue?', 'kdc-qtap-starter' ),
 					'exportFirst'   => __( 'We recommend downloading a backup first. Continue anyway?', 'kdc-qtap-starter' ),
 					'importConfirm' => __( 'This will replace all current settings. Continue?', 'kdc-qtap-starter' ),
 					'invalidFile'   => __( 'Please select a valid JSON file.', 'kdc-qtap-starter' ),
@@ -239,7 +242,7 @@ class KDC_qTap_Starter_Admin {
 	private function get_current_tab() {
 		// phpcs:ignore WordPress.Security.NonceVerification.Recommended
 		$tab = isset( $_GET['tab'] ) ? sanitize_key( $_GET['tab'] ) : 'general';
-		return array_key_exists( $tab, $this->tabs ) ? $tab : 'general';
+		return array_key_exists( $tab, $this->get_tabs() ) ? $tab : 'general';
 	}
 
 	/**
@@ -458,7 +461,7 @@ class KDC_qTap_Starter_Admin {
 			<?php settings_errors( self::PAGE_SLUG ); ?>
 
 			<nav class="nav-tab-wrapper kdc-qtap-starter-tabs">
-				<?php foreach ( $this->tabs as $tab_slug => $tab_label ) : ?>
+				<?php foreach ( $this->get_tabs() as $tab_slug => $tab_label ) : ?>
 					<a href="<?php echo esc_url( admin_url( 'admin.php?page=' . self::PAGE_SLUG . '&tab=' . $tab_slug ) ); ?>"
 					   class="nav-tab <?php echo $current_tab === $tab_slug ? 'nav-tab-active' : ''; ?>">
 						<?php echo esc_html( $tab_label ); ?>

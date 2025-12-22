@@ -422,6 +422,37 @@ if($condition){
 - Check capabilities before ALL admin actions
 - Use `$wpdb->prepare()` for ALL database queries
 
+**⚠️ Translation Loading (WordPress 6.7+):**
+
+WordPress 6.7+ requires translations to load AFTER the `init` action. Never call `__()`, `_e()`, `esc_html__()`, etc. in:
+- Class constructors that run on plugin load
+- Global scope or constants
+- Anything that executes before `init` hook
+
+```php
+// ❌ WRONG - Called in constructor before init
+private function __construct() {
+    $this->tabs = array(
+        'general' => __( 'General', 'my-plugin' ), // ERROR!
+    );
+}
+
+// ✅ CORRECT - Lazy initialization (called only when needed)
+private function get_tabs() {
+    if ( null === $this->tabs ) {
+        $this->tabs = array(
+            'general' => __( 'General', 'my-plugin' ),
+        );
+    }
+    return $this->tabs;
+}
+
+// ✅ CORRECT - Hooked to init or later
+add_action( 'init', function() {
+    $label = __( 'My Label', 'my-plugin' );
+} );
+```
+
 **Documentation:**
 - PHPDoc blocks for all functions, classes, and files
 - Inline comments for complex logic
@@ -577,6 +608,23 @@ wp_localize_script( 'my-script', 'myScriptData', array(
     ),
 ) );
 ```
+
+**⚠️ IMPORTANT: Newlines in Localized Strings**
+
+In PHP, `\n` behaves differently in single vs double quotes:
+```php
+// ❌ WRONG - \n is literal (shows as \n in browser)
+'message' => __( 'Line 1\nLine 2', 'text-domain' ),
+
+// ✅ CORRECT - Use double quotes for actual newlines
+'message' => __( "Line 1\nLine 2", 'text-domain' ),
+
+// ✅ BETTER - Keep messages simple, single line
+'message' => __( 'This is a clear, single-line message.', 'text-domain' ),
+```
+
+Browser `confirm()` and `alert()` dialogs don't render newlines well anyway.
+Keep confirmation messages concise and on a single line.
 
 ---
 
