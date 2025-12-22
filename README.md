@@ -183,6 +183,11 @@ zip -r kdc-qtap-starter.zip kdc-qtap-starter \
 
 ## Changelog
 
+### 1.0.6
+- **CRITICAL FIX:** Fixed "Cannot redeclare" fatal error when multiple qTap apps installed
+- Wrapped all shared menu functions in `function_exists()` checks
+- Changed text domain to `kdc-qtap` for shared functions (consistency)
+
 ### 1.0.5
 - Added GitHub compatibility check instruction (fetch latest CLAUDE.md before creating plugins)
 - Added Plugin URI schema: `https://qtap.app/app/{slug}`
