@@ -183,6 +183,14 @@ zip -r kdc-qtap-starter.zip kdc-qtap-starter \
 
 ## Changelog
 
+### 1.0.5
+- Added GitHub compatibility check instruction (fetch latest CLAUDE.md before creating plugins)
+- Added Plugin URI schema: `https://qtap.app/app/{slug}`
+- Added comprehensive WordPress Coding Standards section
+- Added CSS guidelines: use WordPress core classes first, minimal custom CSS
+- Added Plugin Header Convention documentation
+- Updated starting prompt with all requirements
+
 ### 1.0.4
 - Added tabbed settings interface (General, Import/Export, Data Management)
 - Added Import/Export functionality for settings backup (JSON)

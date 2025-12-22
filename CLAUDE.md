@@ -69,19 +69,20 @@ https://raw.githubusercontent.com/kdctek/kdc-qtap-starter/refs/heads/main/CLAUDE
 
 Please create the plugin following the latest CLAUDE.md guidelines, including:
 1. WordPress Coding Standards compliance (TABS, PHPDoc, escaping, sanitization)
-2. Proper integration with qTap App dashboard (register with dashboard when available)
-3. Shared fallback menu support (uses kdc_qtap_ensure_fallback_menu() - no duplicate menus)
-4. Tabbed settings interface (General, Import/Export, Data Management)
-5. Import/Export functionality for settings backup as JSON
-6. Data retention: preserve user data on uninstall by default
-7. "Delete data on uninstall" option with backup prompt and irreversible warning
-8. Use WordPress core CSS classes for admin UI (button, form-table, notice, nav-tab, etc.)
-9. Minimal custom CSS - only when WordPress core classes don't exist
-10. All necessary files: main plugin file, admin class, shared menu helper, CSS, JS, uninstall.php
-11. Proper sanitization, escaping, and nonce verification
-12. Translation-ready strings
-13. Appropriate hooks and filters for extensibility
-14. Author: KDC (https://kdc.in)
+2. Plugin URI format: https://qtap.app/app/{slug} (e.g., kdc-qtap-mobile → https://qtap.app/app/mobile)
+3. Proper integration with qTap App dashboard (register with dashboard when available)
+4. Shared fallback menu support (uses kdc_qtap_ensure_fallback_menu() - no duplicate menus)
+5. Tabbed settings interface (General, Import/Export, Data Management)
+6. Import/Export functionality for settings backup as JSON
+7. Data retention: preserve user data on uninstall by default
+8. "Delete data on uninstall" option with backup prompt and irreversible warning
+9. Use WordPress core CSS classes for admin UI (button, form-table, notice, nav-tab, etc.)
+10. Minimal custom CSS - only when WordPress core classes don't exist
+11. All necessary files: main plugin file, admin class, shared menu helper, CSS, JS, uninstall.php
+12. Proper sanitization, escaping, and nonce verification
+13. Translation-ready strings
+14. Appropriate hooks and filters for extensibility
+15. Author: KDC (https://kdc.in)
 ```
 
 ---
@@ -324,6 +325,63 @@ When Claude creates files, ensure they follow this pattern:
 | Frontend CSS | `assets/css/frontend.css` |
 | Frontend JS | `assets/js/frontend.js` |
 | Templates | `templates/{template-name}.php` |
+
+---
+
+## Plugin Header Convention
+
+All qTap App child plugins MUST use the following header format:
+
+```php
+<?php
+/**
+ * Plugin Name: qTap {App Name}
+ * Plugin URI:  https://qtap.app/app/{slug}
+ * Description: {Description of what the app does}
+ * Version:     1.0.0
+ * Author:      KDC
+ * Author URI:  https://kdc.in
+ * License:     GPL-2.0-or-later
+ * License URI: https://www.gnu.org/licenses/gpl-2.0.html
+ * Text Domain: kdc-qtap-{slug}
+ * Domain Path: /languages
+ * Requires at least: 5.8
+ * Tested up to: 6.9
+ * Requires PHP: 7.4
+ * WC requires at least: 5.0
+ * WC tested up to: 8.4
+ */
+```
+
+### Plugin URI Schema
+
+**Format:** `https://qtap.app/app/{slug}`
+
+The `{slug}` is the **last part** of the plugin folder name (after `kdc-qtap-`).
+
+| Plugin Folder | Plugin URI |
+|---------------|------------|
+| `kdc-qtap-mobile` | `https://qtap.app/app/mobile` |
+| `kdc-qtap-school` | `https://qtap.app/app/school` |
+| `kdc-qtap-email` | `https://qtap.app/app/email` |
+| `kdc-qtap-analytics` | `https://qtap.app/app/analytics` |
+| `kdc-qtap-starter` | `https://github.com/kdctek/kdc-qtap-starter` (exception - starter template) |
+
+### Plugin Name Format
+
+**Format:** `qTap {App Name}`
+
+| Slug | Plugin Name |
+|------|-------------|
+| `mobile` | `qTap Mobile` |
+| `school` | `qTap School` |
+| `email` | `qTap Email` |
+
+### Text Domain Format
+
+**Format:** `kdc-qtap-{slug}`
+
+Must match the plugin folder name exactly.
 
 ---
 
