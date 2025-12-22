@@ -210,3 +210,59 @@ Before deploying, test:
 - [ ] Uninstall removes all plugin data
 - [ ] Compatible with latest WordPress
 - [ ] Compatible with latest WooCommerce (if applicable)
+
+---
+
+## Releasing New Versions with Claude
+
+### Quick Release Prompt
+
+```
+Release a new [patch/minor/major] version of kdc-qtap-starter to GitHub.
+
+GitHub Repository: https://github.com/kdctek/kdc-qtap-starter
+GitHub Token: ghp_xxxxxxxxxxxxxxxxxxxx
+
+Changes:
+- [Describe what changed]
+```
+
+### Full Release Prompt (with changelog)
+
+```
+Please release version [X.X.X] of kdc-qtap-starter.
+
+GitHub Token: [your-token]
+
+Changelog for this version:
+- Added [feature]
+- Fixed [bug]
+- Updated [component]
+
+Please:
+1. Update version in all files
+2. Update changelog in README.md
+3. Commit and push to GitHub
+4. The GitHub Actions workflow will create the release
+```
+
+### What Claude Will Do
+
+1. Clone or update the repository
+2. Run `./scripts/version-bump.sh [version]`
+3. Update README.md changelog
+4. Commit changes with message "Release version X.X.X"
+5. Create and push git tag
+6. GitHub Actions automatically creates the release with ZIP
+
+### Getting a GitHub Token
+
+1. Go to https://github.com/settings/tokens
+2. Click "Generate new token (classic)"
+3. Name: "Claude Releases" (or anything)
+4. Expiration: Set as needed
+5. Scopes: Select `repo` (Full control of private repositories)
+6. Click "Generate token"
+7. Copy the token (starts with `ghp_`)
+
+**Security Note:** Only share your token with Claude in a private conversation. Never commit tokens to repositories.

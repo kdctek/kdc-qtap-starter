@@ -157,6 +157,12 @@ zip -r kdc-qtap-starter.zip kdc-qtap-starter \
 
 ## Changelog
 
+### 1.0.3
+- Added automated release scripts (`scripts/version-bump.sh`, `scripts/release.sh`)
+- Added GitHub Actions workflow for automated releases
+- Added RELEASING.md documentation
+- Updated CLAUDE.md with release prompts
+
 ### 1.0.2
 - Updated Plugin URI to GitHub repository
 - Added WordPress Tested up to 6.9

@@ -1,0 +1,74 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*.*.*'
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    name: Create Release
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Get version from tag
+        id: get_version
+        run: echo "VERSION=${GITHUB_REF#refs/tags/v}" >> $GITHUB_OUTPUT
+
+      - name: Verify version in plugin file
+        run: |
+          PLUGIN_VERSION=$(grep -oP "Version:\s*\K[0-9]+\.[0-9]+\.[0-9]+" kdc-qtap-starter.php)
+          TAG_VERSION="${{ steps.get_version.outputs.VERSION }}"
+          if [ "$PLUGIN_VERSION" != "$TAG_VERSION" ]; then
+            echo "Error: Plugin version ($PLUGIN_VERSION) doesn't match tag version ($TAG_VERSION)"
+            exit 1
+          fi
+          echo "Version verified: $PLUGIN_VERSION"
+
+      - name: Create plugin ZIP (excludes dev files)
+        run: |
+          # Create a clean directory for the plugin
+          mkdir -p build/kdc-qtap-starter
+          
+          # Copy only production files
+          cp kdc-qtap-starter.php build/kdc-qtap-starter/
+          cp uninstall.php build/kdc-qtap-starter/
+          cp -r includes build/kdc-qtap-starter/
+          cp -r assets build/kdc-qtap-starter/
+          cp -r languages build/kdc-qtap-starter/
+          cp -r templates build/kdc-qtap-starter/
+          
+          # Create ZIP
+          cd build
+          zip -r ../kdc-qtap-starter-v${{ steps.get_version.outputs.VERSION }}.zip kdc-qtap-starter
+
+      - name: Generate changelog
+        id: changelog
+        run: |
+          # Extract changelog for this version from README.md
+          VERSION="${{ steps.get_version.outputs.VERSION }}"
+          CHANGELOG=$(sed -n "/### $VERSION/,/### [0-9]/p" README.md | sed '$d' | tail -n +2)
+          
+          if [ -z "$CHANGELOG" ]; then
+            CHANGELOG="- Version $VERSION release"
+          fi
+          
+          # Save to file for multi-line support
+          echo "$CHANGELOG" > changelog.txt
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v1
+        with:
+          name: qTap Starter v${{ steps.get_version.outputs.VERSION }}
+          body_path: changelog.txt
+          files: kdc-qtap-starter-v${{ steps.get_version.outputs.VERSION }}.zip
+          draft: false
+          prerelease: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
