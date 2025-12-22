@@ -7,9 +7,13 @@ A starter template for building [qTap App](https://qtap.app) child plugins. Use 
 
 ## Features
 
-- ✅ WordPress Coding Standards compliant
+- ✅ WordPress Coding Standards compliant (TABS, PHPDoc, escaping, sanitization)
+- ✅ Minimal custom CSS - leverages WordPress core admin classes
 - ✅ Seamless integration with qTap App dashboard
 - ✅ Shared fallback menu (no duplicates when multiple apps active)
+- ✅ Tabbed settings interface (General, Import/Export, Data Management)
+- ✅ Import/Export settings as JSON backup
+- ✅ Data retention control (preserve data on uninstall by default)
 - ✅ WooCommerce HPOS compatible
 - ✅ Translation ready (i18n)
 - ✅ Proper activation/deactivation/uninstall hooks
@@ -127,7 +131,29 @@ add_submenu_page(
 
 ### Coding Standards
 
-This plugin follows WordPress Coding Standards. To check:
+This plugin follows WordPress Coding Standards:
+
+**PHP:**
+- Use TABS for indentation (not spaces)
+- Escape all output, sanitize all input
+- Use nonces and capability checks
+- PHPDoc blocks on all functions
+
+**CSS - Use WordPress Core Classes:**
+
+```html
+<!-- Use these WordPress admin classes instead of custom CSS -->
+<button class="button button-primary">Primary</button>
+<button class="button button-secondary">Secondary</button>
+<input type="text" class="regular-text" />
+<div class="notice notice-success"><p>Message</p></div>
+<table class="form-table">...</table>
+<nav class="nav-tab-wrapper">...</nav>
+```
+
+Only write custom CSS when WordPress core doesn't provide the needed styling.
+
+**Check Standards:**
 
 ```bash
 # Install PHP_CodeSniffer
@@ -156,6 +182,15 @@ zip -r kdc-qtap-starter.zip kdc-qtap-starter \
 ```
 
 ## Changelog
+
+### 1.0.4
+- Added tabbed settings interface (General, Import/Export, Data Management)
+- Added Import/Export functionality for settings backup (JSON)
+- Added Data Management tab with "Delete data on uninstall" option
+- Data is preserved by default on uninstall (user must opt-in to delete)
+- Added backup download prompt when enabling data deletion
+- Added clipboard copy for export data
+- Added irreversible action warnings
 
 ### 1.0.3
 - Added automated release scripts (`scripts/version-bump.sh`, `scripts/release.sh`)

@@ -1,27 +1,40 @@
 /**
  * qTap Starter Admin Styles
  *
+ * IMPORTANT: This file should contain MINIMAL custom CSS.
+ * Use WordPress core admin classes wherever possible:
+ * - .button, .button-primary, .button-secondary
+ * - .form-table, .regular-text, .small-text, .large-text
+ * - .notice, .notice-success, .notice-error, .notice-warning
+ * - .nav-tab-wrapper, .nav-tab, .nav-tab-active
+ * - .card, .postbox, .description
+ *
+ * Only add custom CSS when WordPress core doesn't provide the needed styling.
+ *
  * @package KDC_qTap_Starter
  * @since   1.0.0
  */
 
 /* ==========================================================================
-   Settings Page
+   Plugin Container - Scope all custom styles
    ========================================================================== */
 
 .kdc-qtap-starter-settings {
-	max-width: 800px;
+	max-width: 900px;
 }
 
 /* ==========================================================================
    Settings Sections
+   
+   WordPress core doesn't provide a card-style settings section,
+   so we create a minimal custom style.
    ========================================================================== */
 
 .kdc-qtap-starter-settings-section {
 	background: #fff;
 	border: 1px solid #c3c4c7;
 	border-radius: 4px;
-	margin-bottom: 20px;
+	margin: 20px 0;
 	padding: 0;
 }
 
@@ -34,75 +47,124 @@
 	padding: 12px 20px;
 }
 
+.kdc-qtap-starter-settings-section > p.description {
+	padding: 12px 20px 0;
+	margin: 0;
+}
+
 .kdc-qtap-starter-settings-section .form-table {
 	margin: 0;
 }
 
 .kdc-qtap-starter-settings-section .form-table th {
 	padding: 20px 10px 20px 20px;
-	width: 200px;
 }
 
 .kdc-qtap-starter-settings-section .form-table td {
 	padding: 15px 20px 15px 10px;
 }
 
-.kdc-qtap-starter-settings-section .form-table tr:not(:last-child) td,
-.kdc-qtap-starter-settings-section .form-table tr:not(:last-child) th {
-	border-bottom: 1px solid #f0f0f1;
-}
-
 /* ==========================================================================
-   Form Elements
+   Warning Box (Yellow)
+   
+   WordPress .notice-warning exists but doesn't have the card-style layout
+   we need for inline warnings within forms.
    ========================================================================== */
 
-.kdc-qtap-starter-settings .description {
-	color: #646970;
-	font-size: 13px;
-	font-style: normal;
-	margin-top: 8px;
-}
-
-/* ==========================================================================
-   Notices
-   ========================================================================== */
-
-.kdc-qtap-starter-notice {
-	background: #fff;
-	border: 1px solid #c3c4c7;
+.kdc-qtap-starter-warning-box {
+	background: #fcf9e8;
+	border: 1px solid #dba617;
 	border-left-width: 4px;
 	border-radius: 4px;
-	margin: 15px 0;
+	margin: 20px;
 	padding: 12px 16px;
 }
 
-.kdc-qtap-starter-notice.notice-success {
-	border-left-color: #00a32a;
+.kdc-qtap-starter-warning-box p {
+	margin: 0;
+	display: flex;
+	align-items: center;
+	gap: 8px;
 }
 
-.kdc-qtap-starter-notice.notice-error {
-	border-left-color: #d63638;
-}
-
-.kdc-qtap-starter-notice.notice-warning {
-	border-left-color: #dba617;
-}
-
-.kdc-qtap-starter-notice.notice-info {
-	border-left-color: #72aee6;
+.kdc-qtap-starter-warning-box .dashicons {
+	color: #dba617;
 }
 
 /* ==========================================================================
-   Responsive
+   Danger Box (Red)
+   
+   Used for irreversible action warnings. WordPress doesn't have
+   a built-in danger/destructive warning card style.
+   ========================================================================== */
+
+.kdc-qtap-starter-danger-box {
+	background: #fcf0f1;
+	border: 1px solid #d63638;
+	border-left-width: 4px;
+	border-radius: 4px;
+	margin: 20px;
+	padding: 20px;
+}
+
+.kdc-qtap-starter-danger-box h3 {
+	margin: 0 0 12px;
+	color: #d63638;
+	display: flex;
+	align-items: center;
+	gap: 8px;
+}
+
+.kdc-qtap-starter-danger-box p {
+	margin: 0 0 10px;
+}
+
+.kdc-qtap-starter-danger-box ul {
+	margin: 10px 0 15px 0;
+	padding: 0;
+	list-style: none;
+}
+
+.kdc-qtap-starter-danger-box ul li {
+	margin-bottom: 5px;
+	color: #50575e;
+}
+
+/* ==========================================================================
+   Backup Prompt
+   
+   A call-to-action box within the danger warning.
+   ========================================================================== */
+
+.kdc-qtap-starter-backup-prompt {
+	background: #fff;
+	border: 1px solid #c3c4c7;
+	border-radius: 4px;
+	padding: 15px;
+	margin-top: 15px;
+}
+
+.kdc-qtap-starter-backup-prompt p {
+	margin: 0 0 10px;
+	font-weight: 500;
+}
+
+/* ==========================================================================
+   Responsive Adjustments
    ========================================================================== */
 
 @media screen and (max-width: 782px) {
 	.kdc-qtap-starter-settings-section .form-table th {
 		padding: 15px 20px 0;
-		width: auto;
 	}
 
 	.kdc-qtap-starter-settings-section .form-table td {
 		padding: 8px 20px 15px;
+	}
+
+	.kdc-qtap-starter-warning-box,
+	.kdc-qtap-starter-danger-box {
+		margin: 15px;
+		padding: 15px;
 	}
 }
