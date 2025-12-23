@@ -148,7 +148,7 @@ if ( ! function_exists( 'kdc_qtap_ensure_fallback_menu' ) ) {
 		// Mark as created so other plugins don't duplicate.
 		kdc_qtap_set_fallback_menu_created();
 
-		// Add inline styles for menu icon.
+		// Add inline styles for menu icon and dashboard.
 		add_action( 'admin_head', 'kdc_qtap_fallback_menu_styles' );
 
 		return $menu_slug;
@@ -157,13 +157,14 @@ if ( ! function_exists( 'kdc_qtap_ensure_fallback_menu' ) ) {
 
 if ( ! function_exists( 'kdc_qtap_fallback_menu_styles' ) ) {
 	/**
-	 * Add fallback menu icon styles.
+	 * Add fallback menu icon and dashboard styles.
 	 *
 	 * @since 1.0.1
 	 */
 	function kdc_qtap_fallback_menu_styles() {
 		?>
 		<style>
+			/* Menu Icon */
 			#adminmenu .toplevel_page_kdc-qtap .wp-menu-image svg {
 				fill: currentColor;
 				width: 20px;
@@ -172,7 +173,184 @@ if ( ! function_exists( 'kdc_qtap_fallback_menu_styles' ) ) {
 			#adminmenu .toplevel_page_kdc-qtap .wp-menu-image svg * {
 				fill: inherit;
 			}
+
+			/* Dashboard Cards Grid */
+			.kdc-qtap-fallback-cards {
+				display: grid;
+				grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+				gap: 20px;
+				margin: 20px 0;
+				max-width: 1200px;
+			}
+
+			/* Individual Card */
+			.kdc-qtap-fallback-card {
+				background: #fff;
+				border: 1px solid #c3c4c7;
+				border-radius: 4px;
+				padding: 20px;
+				transition: box-shadow 0.2s ease;
+			}
+			.kdc-qtap-fallback-card:hover {
+				box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+			}
+
+			/* Card Header */
+			.kdc-qtap-fallback-card-header {
+				display: flex;
+				align-items: center;
+				gap: 12px;
+				margin-bottom: 12px;
+			}
+			.kdc-qtap-fallback-card-icon {
+				font-size: 32px;
+				line-height: 1;
+			}
+			.kdc-qtap-fallback-card-icon.dashicons {
+				font-size: 32px;
+				width: 32px;
+				height: 32px;
+			}
+			.kdc-qtap-fallback-card-title {
+				margin: 0;
+				font-size: 16px;
+				font-weight: 600;
+				color: #1d2327;
+			}
+			.kdc-qtap-fallback-card-version {
+				color: #787c82;
+				font-size: 12px;
+				font-weight: normal;
+				margin-left: auto;
+			}
+
+			/* Card Description */
+			.kdc-qtap-fallback-card-description {
+				color: #50575e;
+				font-size: 13px;
+				line-height: 1.5;
+				margin: 0 0 15px;
+			}
+
+			/* Card Actions */
+			.kdc-qtap-fallback-card-actions {
+				display: flex;
+				gap: 8px;
+			}
+
+			/* Status Badge */
+			.kdc-qtap-fallback-card-status {
+				display: inline-block;
+				padding: 2px 8px;
+				border-radius: 3px;
+				font-size: 11px;
+				font-weight: 500;
+				text-transform: uppercase;
+			}
+			.kdc-qtap-fallback-card-status.active {
+				background: #d4edda;
+				color: #155724;
+			}
+			.kdc-qtap-fallback-card-status.inactive {
+				background: #f8d7da;
+				color: #721c24;
+			}
+
+			/* Responsive */
+			@media screen and (max-width: 782px) {
+				.kdc-qtap-fallback-cards {
+					grid-template-columns: 1fr;
+				}
+			}
 		</style>
+		<?php
+	}
+}
+
+if ( ! function_exists( 'kdc_qtap_register_fallback_card' ) ) {
+	/**
+	 * Register an app card for the fallback dashboard.
+	 *
+	 * Child plugins should call this via the 'kdc_qtap_fallback_dashboard_cards' filter.
+	 *
+	 * @since  1.1.1
+	 * @param  array $cards Existing cards array.
+	 * @param  array $card  Card data to add.
+	 * @return array        Updated cards array.
+	 */
+	function kdc_qtap_register_fallback_card( $cards, $card ) {
+		$defaults = array(
+			'id'           => '',
+			'name'         => '',
+			'description'  => '',
+			'icon'         => '📦',
+			'settings_url' => '',
+			'version'      => '',
+			'is_active'    => true,
+			'priority'     => 50,
+		);
+
+		$card = wp_parse_args( $card, $defaults );
+
+		if ( ! empty( $card['id'] ) && ! empty( $card['name'] ) ) {
+			$cards[ $card['id'] ] = $card;
+		}
+
+		return $cards;
+	}
+}
+
+if ( ! function_exists( 'kdc_qtap_render_dashboard_card' ) ) {
+	/**
+	 * Render a single dashboard card.
+	 *
+	 * @since 1.1.1
+	 * @param array $card Card data.
+	 */
+	function kdc_qtap_render_dashboard_card( $card ) {
+		$defaults = array(
+			'id'           => '',
+			'name'         => '',
+			'description'  => '',
+			'icon'         => '📦',
+			'settings_url' => '',
+			'version'      => '',
+			'is_active'    => true,
+		);
+
+		$card = wp_parse_args( $card, $defaults );
+
+		// Determine if icon is emoji or dashicon.
+		$is_dashicon = strpos( $card['icon'], 'dashicons-' ) === 0;
+		?>
+		<div class="kdc-qtap-fallback-card" data-app-id="<?php echo esc_attr( $card['id'] ); ?>">
+			<div class="kdc-qtap-fallback-card-header">
+				<?php if ( $is_dashicon ) : ?>
+					<span class="kdc-qtap-fallback-card-icon dashicons <?php echo esc_attr( $card['icon'] ); ?>"></span>
+				<?php else : ?>
+					<span class="kdc-qtap-fallback-card-icon"><?php echo esc_html( $card['icon'] ); ?></span>
+				<?php endif; ?>
+				<h3 class="kdc-qtap-fallback-card-title"><?php echo esc_html( $card['name'] ); ?></h3>
+				<?php if ( ! empty( $card['version'] ) ) : ?>
+					<span class="kdc-qtap-fallback-card-version">v<?php echo esc_html( $card['version'] ); ?></span>
+				<?php endif; ?>
+			</div>
+
+			<?php if ( ! empty( $card['description'] ) ) : ?>
+				<p class="kdc-qtap-fallback-card-description"><?php echo esc_html( $card['description'] ); ?></p>
+			<?php endif; ?>
+
+			<div class="kdc-qtap-fallback-card-actions">
+				<?php if ( ! empty( $card['settings_url'] ) ) : ?>
+					<a href="<?php echo esc_url( $card['settings_url'] ); ?>" class="button button-primary">
+						<?php esc_html_e( 'Settings', 'kdc-qtap' ); ?>
+					</a>
+				<?php endif; ?>
+				<span class="kdc-qtap-fallback-card-status <?php echo $card['is_active'] ? 'active' : 'inactive'; ?>">
+					<?php echo $card['is_active'] ? esc_html__( 'Active', 'kdc-qtap' ) : esc_html__( 'Inactive', 'kdc-qtap' ); ?>
+				</span>
+			</div>
+		</div>
 		<?php
 	}
 }
@@ -181,7 +359,8 @@ if ( ! function_exists( 'kdc_qtap_render_fallback_dashboard' ) ) {
 	/**
 	 * Render the fallback dashboard page.
 	 *
-	 * Shows a simple dashboard when qTap App is not installed.
+	 * Shows a dashboard with app cards when qTap App is not installed.
+	 * Child plugins register their cards via the 'kdc_qtap_fallback_dashboard_cards' filter.
 	 *
 	 * @since 1.0.1
 	 */
@@ -189,6 +368,23 @@ if ( ! function_exists( 'kdc_qtap_render_fallback_dashboard' ) ) {
 		if ( ! current_user_can( 'manage_options' ) ) {
 			wp_die( esc_html__( 'You do not have sufficient permissions to access this page.', 'kdc-qtap' ) );
 		}
+
+		/**
+		 * Filter the cards displayed on the fallback dashboard.
+		 *
+		 * Child plugins should hook into this filter to add their cards.
+		 *
+		 * @since 1.1.1
+		 * @param array $cards Array of card data arrays.
+		 */
+		$cards = apply_filters( 'kdc_qtap_fallback_dashboard_cards', array() );
+
+		// Sort cards by priority.
+		uasort( $cards, function( $a, $b ) {
+			$priority_a = isset( $a['priority'] ) ? $a['priority'] : 50;
+			$priority_b = isset( $b['priority'] ) ? $b['priority'] : 50;
+			return $priority_a - $priority_b;
+		} );
 		?>
 		<div class="wrap">
 			<h1><?php echo esc_html__( 'qTap Dashboard', 'kdc-qtap' ); ?></h1>
@@ -206,10 +402,29 @@ if ( ! function_exists( 'kdc_qtap_render_fallback_dashboard' ) ) {
 				</p>
 			</div>
 
-			<div class="card" style="max-width: 600px;">
-				<h2><?php echo esc_html__( 'Your Active qTap Apps', 'kdc-qtap' ); ?></h2>
-				<p><?php echo esc_html__( 'Use the submenu items to access your installed qTap apps.', 'kdc-qtap' ); ?></p>
-			</div>
+			<?php if ( ! empty( $cards ) ) : ?>
+				<h2><?php echo esc_html__( 'Your qTap Apps', 'kdc-qtap' ); ?></h2>
+				<div class="kdc-qtap-fallback-cards">
+					<?php foreach ( $cards as $card ) : ?>
+						<?php kdc_qtap_render_dashboard_card( $card ); ?>
+					<?php endforeach; ?>
+				</div>
+			<?php else : ?>
+				<div class="card" style="max-width: 600px;">
+					<h2><?php echo esc_html__( 'No Apps Registered', 'kdc-qtap' ); ?></h2>
+					<p><?php echo esc_html__( 'qTap apps will appear here when they register with the dashboard.', 'kdc-qtap' ); ?></p>
+				</div>
+			<?php endif; ?>
+
+			<?php
+			/**
+			 * Action hook for adding content after the cards grid.
+			 *
+			 * @since 1.1.1
+			 * @param array $cards The registered cards.
+			 */
+			do_action( 'kdc_qtap_fallback_dashboard_after_cards', $cards );
+			?>
 		</div>
 		<?php
 	}

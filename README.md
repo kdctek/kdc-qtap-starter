@@ -183,6 +183,15 @@ zip -r kdc-qtap-starter.zip kdc-qtap-starter \
 
 ## Changelog
 
+### 1.1.1
+- Added fallback dashboard with app cards grid
+- Added `kdc_qtap_fallback_dashboard_cards` filter for child plugins to register cards
+- Added `kdc_qtap_render_dashboard_card()` function to render individual cards
+- Added `kdc_qtap_fallback_dashboard_after_cards` action hook
+- Added CSS styling for dashboard cards (responsive grid)
+- Updated CLAUDE.md with fallback dashboard registration documentation
+- Child plugins now register with BOTH qTap App dashboard AND fallback dashboard
+
 ### 1.1.0
 - Expanded WordPress 6.7+ translation loading documentation with complete fix steps
 - Added quick fix guide for existing child plugins

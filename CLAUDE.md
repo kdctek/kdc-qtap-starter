@@ -440,25 +440,79 @@ public function register_with_qtap() {
 | 70-90 | Utility/secondary apps |
 | 100+ | Low priority apps |
 
-### Standalone Mode
+### Standalone Mode & Fallback Dashboard
 
-When qTap App is NOT installed, the registration function won't exist. The child plugin should:
+When qTap App is NOT installed, child plugins should still show their cards on a fallback dashboard. This requires **two registrations**:
 
-1. Check if `kdc_qtap_register_plugin()` exists before calling
-2. Use the shared fallback menu for admin navigation
-3. Work completely independently
+1. **qTap App Dashboard** - via `kdc_qtap_register_plugin()` (when qTap App installed)
+2. **Fallback Dashboard** - via `kdc_qtap_fallback_dashboard_cards` filter (when qTap App NOT installed)
+
+### Fallback Dashboard Registration
+
+The fallback dashboard uses a filter hook for child plugins to register their cards:
 
 ```php
+/**
+ * Register with both dashboards.
+ */
 public function register_with_qtap() {
-    // Gracefully skip if qTap App not installed
-    if ( ! function_exists( 'kdc_qtap_register_plugin' ) ) {
-        return;  // Plugin works standalone
+    // Register with qTap App dashboard (if installed).
+    if ( function_exists( 'kdc_qtap_register_plugin' ) ) {
+        kdc_qtap_register_plugin(
+            array(
+                'id'           => 'email',
+                'name'         => __( 'Email', 'kdc-qtap-email' ),
+                'description'  => __( 'SMTP email with logging.', 'kdc-qtap-email' ),
+                'icon'         => '📧',
+                'settings_url' => admin_url( 'admin.php?page=kdc-qtap-email' ),
+                'version'      => KDC_QTAP_EMAIL_VERSION,
+                'is_active'    => true,
+                'priority'     => 30,
+            )
+        );
     }
 
-    // Register with dashboard
-    kdc_qtap_register_plugin( array( ... ) );
+    // ALWAYS register with fallback dashboard (shown when qTap App NOT installed).
+    add_filter( 'kdc_qtap_fallback_dashboard_cards', array( $this, 'register_fallback_card' ) );
+}
+
+/**
+ * Register card for fallback dashboard.
+ *
+ * @param  array $cards Existing cards.
+ * @return array        Updated cards.
+ */
+public function register_fallback_card( $cards ) {
+    $cards['email'] = array(
+        'id'           => 'email',
+        'name'         => __( 'Email', 'kdc-qtap-email' ),
+        'description'  => __( 'SMTP email with logging.', 'kdc-qtap-email' ),
+        'icon'         => '📧',
+        'settings_url' => admin_url( 'admin.php?page=kdc-qtap-email' ),
+        'version'      => KDC_QTAP_EMAIL_VERSION,
+        'is_active'    => true,
+        'priority'     => 30,
+    );
+    return $cards;
 }
 ```
+
+### Fallback Dashboard Functions
+
+The shared menu file (`kdc-qtap-shared-menu.php`) provides these functions:
+
+| Function | Description |
+|----------|-------------|
+| `kdc_qtap_render_fallback_dashboard()` | Renders the fallback dashboard with all registered cards |
+| `kdc_qtap_render_dashboard_card( $card )` | Renders a single app card |
+| `kdc_qtap_register_fallback_card( $cards, $card )` | Helper to add a card to the array |
+
+### Fallback Dashboard Hooks
+
+| Hook | Type | Description |
+|------|------|-------------|
+| `kdc_qtap_fallback_dashboard_cards` | Filter | Register app cards for fallback dashboard |
+| `kdc_qtap_fallback_dashboard_after_cards` | Action | Add content after the cards grid |
 
 ### Complete Example
 
@@ -471,38 +525,60 @@ class KDC_qTap_Email {
     }
 
     private function init_hooks() {
-        // Register with qTap Dashboard at priority 20 (after qTap App initializes)
+        // Register with dashboards at priority 20 (after qTap initializes)
         add_action( 'init', array( $this, 'register_with_qtap' ), 20 );
         
         // Admin menu
         add_action( 'admin_menu', array( $this, 'add_admin_menu' ), 20 );
     }
 
+    /**
+     * Register with both qTap App and fallback dashboards.
+     */
     public function register_with_qtap() {
-        if ( ! function_exists( 'kdc_qtap_register_plugin' ) ) {
-            return;
+        // qTap App dashboard (when installed)
+        if ( function_exists( 'kdc_qtap_register_plugin' ) ) {
+            kdc_qtap_register_plugin(
+                array(
+                    'id'           => 'email',
+                    'name'         => __( 'Email', 'kdc-qtap-email' ),
+                    'description'  => __( 'SMTP email with logging and templates.', 'kdc-qtap-email' ),
+                    'icon'         => '📧',
+                    'settings_url' => admin_url( 'admin.php?page=kdc-qtap-email' ),
+                    'version'      => '1.0.0',
+                    'is_active'    => true,
+                    'priority'     => 30,
+                    'category'     => 'communication',
+                )
+            );
         }
 
-        kdc_qtap_register_plugin(
-            array(
-                'id'           => 'email',
-                'name'         => __( 'Email', 'kdc-qtap-email' ),
-                'description'  => __( 'SMTP email with logging and templates.', 'kdc-qtap-email' ),
-                'icon'         => '📧',
-                'settings_url' => admin_url( 'admin.php?page=kdc-qtap-email' ),
-                'version'      => '1.0.0',
-                'is_active'    => true,
-                'priority'     => 30,
-                'category'     => 'communication',
-            )
+        // Fallback dashboard (when qTap App NOT installed)
+        add_filter( 'kdc_qtap_fallback_dashboard_cards', array( $this, 'register_fallback_card' ) );
+    }
+
+    /**
+     * Register card for fallback dashboard.
+     */
+    public function register_fallback_card( $cards ) {
+        $cards['email'] = array(
+            'id'           => 'email',
+            'name'         => __( 'Email', 'kdc-qtap-email' ),
+            'description'  => __( 'SMTP email with logging and templates.', 'kdc-qtap-email' ),
+            'icon'         => '📧',
+            'settings_url' => admin_url( 'admin.php?page=kdc-qtap-email' ),
+            'version'      => '1.0.0',
+            'is_active'    => true,
+            'priority'     => 30,
         );
+        return $cards;
     }
 }
 ```
 
 ### Dashboard Appearance
 
-When registered, the app appears as a card on the qTap Dashboard:
+When registered, the app appears as a card on the qTap Dashboard (or fallback):
 
 ```
 ┌─────────────────────────────┐
@@ -511,9 +587,11 @@ When registered, the app appears as a card on the qTap Dashboard:
 │  SMTP email with logging    │
 │  and templates.             │
 │                             │
-│  [Settings] [Docs]          │
+│  [Settings]      [Active]   │
 └─────────────────────────────┘
 ```
+
+The fallback dashboard displays all registered cards in a responsive grid layout.
 
 ---
 

@@ -3,7 +3,7 @@
  * Plugin Name:       qTap Starter
  * Plugin URI:        https://github.com/kdctek/kdc-qtap-starter
  * Description:       A starter template for building qTap App child plugins. Replace this with your app description.
- * Version:           1.1.0
+ * Version:           1.1.1
  * Author:            KDC
  * Author URI:        https://kdc.in
  * License:           GPL v2 or later
@@ -34,7 +34,7 @@ if ( defined( 'KDC_QTAP_STARTER_VERSION' ) ) {
 /**
  * Plugin constants.
  */
-define( 'KDC_QTAP_STARTER_VERSION', '1.1.0' );
+define( 'KDC_QTAP_STARTER_VERSION', '1.1.1' );
 define( 'KDC_QTAP_STARTER_PLUGIN_FILE', __FILE__ );
 define( 'KDC_QTAP_STARTER_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'KDC_QTAP_STARTER_PLUGIN_URL', plugin_dir_url( __FILE__ ) );
@@ -170,23 +170,45 @@ final class KDC_qTap_Starter {
 	 * @since 1.0.0
 	 */
 	public function register_with_qtap() {
-		// Only register if qTap App is active.
-		if ( ! function_exists( 'kdc_qtap_register_plugin' ) ) {
-			return;
+		// Register with qTap App dashboard (if installed).
+		if ( function_exists( 'kdc_qtap_register_plugin' ) ) {
+			kdc_qtap_register_plugin(
+				array(
+					'id'           => 'starter',
+					'name'         => __( 'Starter', 'kdc-qtap-starter' ),
+					'description'  => __( 'A starter template for qTap apps.', 'kdc-qtap-starter' ),
+					'icon'         => '🚀',
+					'settings_url' => admin_url( 'admin.php?page=kdc-qtap-starter' ),
+					'version'      => KDC_QTAP_STARTER_VERSION,
+					'is_active'    => true,
+					'priority'     => 50,
+				)
+			);
 		}
 
-		kdc_qtap_register_plugin(
-			array(
-				'id'           => 'starter',
-				'name'         => __( 'Starter', 'kdc-qtap-starter' ),
-				'description'  => __( 'A starter template for qTap apps.', 'kdc-qtap-starter' ),
-				'icon'         => '🚀',
-				'settings_url' => admin_url( 'admin.php?page=kdc-qtap-starter' ),
-				'version'      => KDC_QTAP_STARTER_VERSION,
-				'is_active'    => true,
-				'priority'     => 50,
-			)
+		// Register with fallback dashboard (when qTap App not installed).
+		add_filter( 'kdc_qtap_fallback_dashboard_cards', array( $this, 'register_fallback_card' ) );
+	}
+
+	/**
+	 * Register card for fallback dashboard.
+	 *
+	 * @since  1.1.1
+	 * @param  array $cards Existing cards.
+	 * @return array        Updated cards.
+	 */
+	public function register_fallback_card( $cards ) {
+		$cards['starter'] = array(
+			'id'           => 'starter',
+			'name'         => __( 'Starter', 'kdc-qtap-starter' ),
+			'description'  => __( 'A starter template for qTap apps.', 'kdc-qtap-starter' ),
+			'icon'         => '🚀',
+			'settings_url' => admin_url( 'admin.php?page=kdc-qtap-starter' ),
+			'version'      => KDC_QTAP_STARTER_VERSION,
+			'is_active'    => true,
+			'priority'     => 50,
 		);
+		return $cards;
 	}
 
 	/**
