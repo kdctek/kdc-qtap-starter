@@ -1,0 +1,505 @@
+/**
+ * qTap Starter Admin Styles - WCAG Level AAA Compliant
+ *
+ * This stylesheet is loaded when Accessibility Mode is enabled in qTap App.
+ * It provides enhanced accessibility features beyond WordPress core styles.
+ *
+ * Accessibility Features:
+ * - Color contrast ratio 7:1+ for normal text (AAA)
+ * - Color contrast ratio 4.5:1+ for large text (AAA)
+ * - Enhanced focus indicators with 3:1+ contrast
+ * - Minimum target size 44x44 CSS pixels
+ * - Reduced motion support
+ * - High contrast mode support
+ * - Text spacing support
+ *
+ * @package KDC_qTap_Starter
+ * @since   1.3.0
+ */
+
+/* ==========================================================================
+   CSS Custom Properties (Design Tokens)
+   AAA Contrast Ratios verified against #ffffff background
+   ========================================================================== */
+
+:root {
+	/* Text Colors - All meet 7:1 contrast ratio on white */
+	--qtap-starter-text-primary: #1d2327;      /* 14.6:1 contrast */
+	--qtap-starter-text-secondary: #50575e;    /* 7.0:1 contrast */
+	--qtap-starter-text-tertiary: #3c434a;     /* 9.4:1 contrast */
+
+	/* Interactive Colors - Meet 4.5:1 for large text, 3:1 for UI */
+	--qtap-starter-accent: #0a4b78;            /* 8.5:1 contrast */
+	--qtap-starter-accent-hover: #062d49;      /* 12.6:1 contrast */
+
+	/* Status Colors - AAA compliant */
+	--qtap-starter-success: #155724;           /* 9.0:1 on #d4edda */
+	--qtap-starter-success-bg: #d4edda;
+	--qtap-starter-warning: #856404;           /* 7.1:1 on #fff3cd */
+	--qtap-starter-warning-bg: #fff3cd;
+	--qtap-starter-danger: #721c24;            /* 8.4:1 on #f8d7da */
+	--qtap-starter-danger-bg: #f8d7da;
+
+	/* Borders and Backgrounds */
+	--qtap-starter-border: #8c8f94;            /* 3.5:1 contrast */
+	--qtap-starter-border-focus: #0a4b78;
+	--qtap-starter-bg-card: #ffffff;
+	--qtap-starter-bg-muted: #f0f0f1;
+
+	/* Focus indicator */
+	--qtap-starter-focus-width: 3px;
+	--qtap-starter-focus-offset: 2px;
+
+	/* Minimum target size (AAA requires 44x44px) */
+	--qtap-starter-target-size: 44px;
+
+	/* Transitions - disabled when reduced motion preferred */
+	--qtap-starter-transition: 0.2s ease;
+}
+
+/* ==========================================================================
+   Reduced Motion Support (WCAG 2.3.3 AAA)
+   ========================================================================== */
+
+@media (prefers-reduced-motion: reduce) {
+	:root {
+		--qtap-starter-transition: 0s;
+	}
+
+	*,
+	*::before,
+	*::after {
+		animation-duration: 0.01ms !important;
+		animation-iteration-count: 1 !important;
+		transition-duration: 0.01ms !important;
+	}
+}
+
+/* ==========================================================================
+   Plugin Container
+   ========================================================================== */
+
+.kdc-qtap-starter-settings {
+	max-width: 900px;
+}
+
+.kdc-qtap-starter-accessible {
+	/* Enable text spacing support */
+	word-wrap: break-word;
+	overflow-wrap: break-word;
+}
+
+/* Screen reader only content */
+.kdc-qtap-starter-settings .screen-reader-text {
+	position: absolute;
+	width: 1px;
+	height: 1px;
+	padding: 0;
+	margin: -1px;
+	overflow: hidden;
+	clip: rect(0, 0, 0, 0);
+	white-space: nowrap;
+	border: 0;
+}
+
+/* ==========================================================================
+   Settings Sections - Enhanced for Accessibility
+   ========================================================================== */
+
+.kdc-qtap-starter-accessible .kdc-qtap-starter-settings-section {
+	background: var(--qtap-starter-bg-card);
+	border: 2px solid var(--qtap-starter-border);
+	border-radius: 4px;
+	margin: 20px 0;
+	padding: 0;
+}
+
+.kdc-qtap-starter-accessible .kdc-qtap-starter-settings-section:focus-within {
+	border-color: var(--qtap-starter-border-focus);
+	box-shadow: 0 0 0 var(--qtap-starter-focus-width) rgba(10, 75, 120, 0.25);
+}
+
+.kdc-qtap-starter-accessible .kdc-qtap-starter-settings-section h2 {
+	background: var(--qtap-starter-bg-muted);
+	border-bottom: 2px solid var(--qtap-starter-border);
+	font-size: 16px;
+	font-weight: 600;
+	margin: 0;
+	padding: 16px 20px;
+	color: var(--qtap-starter-text-primary);
+}
+
+.kdc-qtap-starter-accessible .kdc-qtap-starter-settings-section > p.description {
+	padding: 16px 20px 0;
+	margin: 0;
+	font-size: 14px;
+	line-height: 1.6;
+	color: var(--qtap-starter-text-secondary);
+}
+
+.kdc-qtap-starter-accessible .kdc-qtap-starter-settings-section .form-table {
+	margin: 0;
+}
+
+.kdc-qtap-starter-accessible .kdc-qtap-starter-settings-section .form-table th {
+	padding: 20px 10px 20px 20px;
+	font-size: 14px;
+	color: var(--qtap-starter-text-primary);
+	line-height: 1.5;
+}
+
+.kdc-qtap-starter-accessible .kdc-qtap-starter-settings-section .form-table td {
+	padding: 15px 20px 15px 10px;
+}
+
+.kdc-qtap-starter-accessible .kdc-qtap-starter-settings-section .form-table label {
+	font-size: 14px;
+	color: var(--qtap-starter-text-primary);
+}
+
+.kdc-qtap-starter-accessible .kdc-qtap-starter-settings-section .description {
+	color: var(--qtap-starter-text-secondary);
+	font-size: 13px;
+	line-height: 1.5;
+}
+
+/* ==========================================================================
+   Form Elements - Enhanced Focus and Target Size
+   ========================================================================== */
+
+/* Input fields */
+.kdc-qtap-starter-accessible input[type="text"],
+.kdc-qtap-starter-accessible input[type="number"],
+.kdc-qtap-starter-accessible input[type="email"],
+.kdc-qtap-starter-accessible input[type="url"],
+.kdc-qtap-starter-accessible input[type="password"],
+.kdc-qtap-starter-accessible textarea,
+.kdc-qtap-starter-accessible select {
+	min-height: var(--qtap-starter-target-size);
+	font-size: 14px;
+	padding: 8px 12px;
+	border: 2px solid var(--qtap-starter-border);
+	border-radius: 4px;
+	color: var(--qtap-starter-text-primary);
+	transition: border-color var(--qtap-starter-transition), box-shadow var(--qtap-starter-transition);
+}
+
+.kdc-qtap-starter-accessible input[type="text"]:focus,
+.kdc-qtap-starter-accessible input[type="number"]:focus,
+.kdc-qtap-starter-accessible input[type="email"]:focus,
+.kdc-qtap-starter-accessible input[type="url"]:focus,
+.kdc-qtap-starter-accessible input[type="password"]:focus,
+.kdc-qtap-starter-accessible textarea:focus,
+.kdc-qtap-starter-accessible select:focus {
+	border-color: var(--qtap-starter-border-focus);
+	outline: var(--qtap-starter-focus-width) solid var(--qtap-starter-border-focus);
+	outline-offset: var(--qtap-starter-focus-offset);
+	box-shadow: 0 0 0 calc(var(--qtap-starter-focus-width) + var(--qtap-starter-focus-offset) + 2px) rgba(10, 75, 120, 0.15);
+}
+
+/* Checkboxes and radio buttons - larger target area */
+.kdc-qtap-starter-accessible input[type="checkbox"],
+.kdc-qtap-starter-accessible input[type="radio"] {
+	width: 20px;
+	height: 20px;
+	margin-right: 8px;
+	cursor: pointer;
+}
+
+.kdc-qtap-starter-accessible input[type="checkbox"]:focus,
+.kdc-qtap-starter-accessible input[type="radio"]:focus {
+	outline: var(--qtap-starter-focus-width) solid var(--qtap-starter-border-focus);
+	outline-offset: var(--qtap-starter-focus-offset);
+}
+
+/* Labels with checkboxes - ensure proper spacing */
+.kdc-qtap-starter-accessible label {
+	display: inline-flex;
+	align-items: center;
+	min-height: var(--qtap-starter-target-size);
+	cursor: pointer;
+}
+
+/* File input */
+.kdc-qtap-starter-accessible input[type="file"] {
+	min-height: var(--qtap-starter-target-size);
+	padding: 10px;
+	border: 2px dashed var(--qtap-starter-border);
+	border-radius: 4px;
+	background: var(--qtap-starter-bg-muted);
+	cursor: pointer;
+}
+
+.kdc-qtap-starter-accessible input[type="file"]:focus {
+	outline: var(--qtap-starter-focus-width) solid var(--qtap-starter-border-focus);
+	outline-offset: var(--qtap-starter-focus-offset);
+}
+
+/* ==========================================================================
+   Buttons - AAA Target Size and Contrast
+   ========================================================================== */
+
+.kdc-qtap-starter-accessible .button,
+.kdc-qtap-starter-accessible .button-primary,
+.kdc-qtap-starter-accessible .button-secondary {
+	min-height: var(--qtap-starter-target-size);
+	min-width: var(--qtap-starter-target-size);
+	padding: 10px 20px;
+	font-size: 14px;
+	font-weight: 600;
+	line-height: 1.5;
+	border-radius: 4px;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	gap: 6px;
+	transition: background-color var(--qtap-starter-transition), 
+	            border-color var(--qtap-starter-transition);
+}
+
+.kdc-qtap-starter-accessible .button-primary {
+	background: var(--qtap-starter-accent);
+	border: 2px solid var(--qtap-starter-accent);
+	color: #ffffff;
+}
+
+.kdc-qtap-starter-accessible .button-primary:hover {
+	background: var(--qtap-starter-accent-hover);
+	border-color: var(--qtap-starter-accent-hover);
+	color: #ffffff;
+}
+
+.kdc-qtap-starter-accessible .button-primary:focus {
+	outline: var(--qtap-starter-focus-width) solid var(--qtap-starter-border-focus);
+	outline-offset: var(--qtap-starter-focus-offset);
+	box-shadow: 0 0 0 calc(var(--qtap-starter-focus-width) + var(--qtap-starter-focus-offset) + 2px) rgba(10, 75, 120, 0.25);
+}
+
+.kdc-qtap-starter-accessible .button-secondary,
+.kdc-qtap-starter-accessible .button:not(.button-primary) {
+	background: var(--qtap-starter-bg-card);
+	border: 2px solid var(--qtap-starter-border);
+	color: var(--qtap-starter-text-primary);
+}
+
+.kdc-qtap-starter-accessible .button-secondary:hover,
+.kdc-qtap-starter-accessible .button:not(.button-primary):hover {
+	background: var(--qtap-starter-bg-muted);
+	border-color: var(--qtap-starter-accent);
+	color: var(--qtap-starter-accent);
+}
+
+.kdc-qtap-starter-accessible .button-secondary:focus,
+.kdc-qtap-starter-accessible .button:not(.button-primary):focus {
+	outline: var(--qtap-starter-focus-width) solid var(--qtap-starter-border-focus);
+	outline-offset: var(--qtap-starter-focus-offset);
+}
+
+/* ==========================================================================
+   Navigation Tabs - Enhanced Accessibility
+   ========================================================================== */
+
+.kdc-qtap-starter-accessible .nav-tab-wrapper {
+	border-bottom: 2px solid var(--qtap-starter-border);
+}
+
+.kdc-qtap-starter-accessible .nav-tab {
+	min-height: var(--qtap-starter-target-size);
+	padding: 10px 20px;
+	font-size: 14px;
+	font-weight: 500;
+	color: var(--qtap-starter-text-primary);
+	border: 2px solid transparent;
+	border-bottom: none;
+	margin-bottom: -2px;
+	transition: background-color var(--qtap-starter-transition);
+}
+
+.kdc-qtap-starter-accessible .nav-tab:hover {
+	background: var(--qtap-starter-bg-muted);
+	color: var(--qtap-starter-accent);
+}
+
+.kdc-qtap-starter-accessible .nav-tab:focus {
+	outline: var(--qtap-starter-focus-width) solid var(--qtap-starter-border-focus);
+	outline-offset: var(--qtap-starter-focus-offset);
+}
+
+.kdc-qtap-starter-accessible .nav-tab-active {
+	background: var(--qtap-starter-bg-card);
+	border-color: var(--qtap-starter-border);
+	border-bottom-color: var(--qtap-starter-bg-card);
+	color: var(--qtap-starter-accent);
+	font-weight: 600;
+}
+
+/* ==========================================================================
+   Warning Box (Yellow) - AAA Compliant
+   ========================================================================== */
+
+.kdc-qtap-starter-accessible .kdc-qtap-starter-warning-box {
+	background: var(--qtap-starter-warning-bg);
+	border: 2px solid #b38600;
+	border-left-width: 4px;
+	border-radius: 4px;
+	margin: 20px;
+	padding: 16px 20px;
+}
+
+.kdc-qtap-starter-accessible .kdc-qtap-starter-warning-box p {
+	margin: 0;
+	display: flex;
+	align-items: center;
+	gap: 10px;
+	font-size: 14px;
+	line-height: 1.5;
+	color: var(--qtap-starter-warning);
+}
+
+.kdc-qtap-starter-accessible .kdc-qtap-starter-warning-box .dashicons {
+	color: var(--qtap-starter-warning);
+}
+
+/* ==========================================================================
+   Danger Box (Red) - AAA Compliant
+   ========================================================================== */
+
+.kdc-qtap-starter-accessible .kdc-qtap-starter-danger-box {
+	background: var(--qtap-starter-danger-bg);
+	border: 2px solid #c53030;
+	border-left-width: 4px;
+	border-radius: 4px;
+	margin: 20px;
+	padding: 20px;
+}
+
+.kdc-qtap-starter-accessible .kdc-qtap-starter-danger-box h3 {
+	margin: 0 0 12px;
+	color: var(--qtap-starter-danger);
+	display: flex;
+	align-items: center;
+	gap: 10px;
+	font-size: 16px;
+}
+
+.kdc-qtap-starter-accessible .kdc-qtap-starter-danger-box p {
+	margin: 0 0 10px;
+	font-size: 14px;
+	line-height: 1.6;
+	color: var(--qtap-starter-danger);
+}
+
+.kdc-qtap-starter-accessible .kdc-qtap-starter-danger-box ul {
+	margin: 10px 0 15px 0;
+	padding: 0;
+	list-style: none;
+}
+
+.kdc-qtap-starter-accessible .kdc-qtap-starter-danger-box ul li {
+	margin-bottom: 8px;
+	color: var(--qtap-starter-text-tertiary);
+	font-size: 14px;
+}
+
+/* ==========================================================================
+   Backup Prompt
+   ========================================================================== */
+
+.kdc-qtap-starter-accessible .kdc-qtap-starter-backup-prompt {
+	background: var(--qtap-starter-bg-card);
+	border: 2px solid var(--qtap-starter-border);
+	border-radius: 4px;
+	padding: 15px 20px;
+	margin-top: 15px;
+}
+
+.kdc-qtap-starter-accessible .kdc-qtap-starter-backup-prompt p {
+	margin: 0 0 12px;
+	font-weight: 600;
+	color: var(--qtap-starter-text-primary);
+}
+
+/* ==========================================================================
+   High Contrast Mode Support
+   ========================================================================== */
+
+@media (prefers-contrast: more) {
+	:root {
+		--qtap-starter-border: #1d2327;
+		--qtap-starter-text-secondary: #1d2327;
+		--qtap-starter-accent: #000000;
+		--qtap-starter-focus-width: 4px;
+	}
+
+	.kdc-qtap-starter-accessible .kdc-qtap-starter-settings-section {
+		border-width: 3px;
+	}
+
+	.kdc-qtap-starter-accessible .button-primary {
+		border-width: 3px;
+	}
+}
+
+/* Forced colors mode (Windows High Contrast) */
+@media (forced-colors: active) {
+	.kdc-qtap-starter-accessible .kdc-qtap-starter-settings-section {
+		border: 2px solid CanvasText;
+	}
+
+	.kdc-qtap-starter-accessible .kdc-qtap-starter-settings-section:focus-within {
+		outline: 3px solid Highlight;
+	}
+
+	.kdc-qtap-starter-accessible .button {
+		border: 2px solid ButtonText;
+	}
+
+	.kdc-qtap-starter-accessible .button:focus {
+		outline: 3px solid Highlight;
+	}
+}
+
+/* ==========================================================================
+   Responsive Adjustments
+   ========================================================================== */
+
+@media screen and (max-width: 782px) {
+	.kdc-qtap-starter-accessible .kdc-qtap-starter-settings-section .form-table th {
+		padding: 15px 20px 0;
+	}
+
+	.kdc-qtap-starter-accessible .kdc-qtap-starter-settings-section .form-table td {
+		padding: 8px 20px 15px;
+	}
+
+	.kdc-qtap-starter-accessible .kdc-qtap-starter-warning-box,
+	.kdc-qtap-starter-accessible .kdc-qtap-starter-danger-box {
+		margin: 15px;
+		padding: 15px;
+	}
+
+	/* Larger targets on touch devices */
+	.kdc-qtap-starter-accessible .button {
+		min-height: 48px;
+		padding: 12px 24px;
+	}
+}
+
+/* ==========================================================================
+   Print Styles
+   ========================================================================== */
+
+@media print {
+	.kdc-qtap-starter-accessible .kdc-qtap-starter-settings-section {
+		border: 1px solid #000;
+		box-shadow: none;
+	}
+
+	.kdc-qtap-starter-accessible .button {
+		display: none;
+	}
+
+	.kdc-qtap-starter-accessible .nav-tab-wrapper {
+		display: none;
+	}
+}

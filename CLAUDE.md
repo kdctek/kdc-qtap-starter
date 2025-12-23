@@ -232,83 +232,248 @@ Also add cleanup for [additional data] in uninstall.php when delete option is en
 
 ---
 
-## Built-in Features (v1.0.4+)
+## Built-in Features (v1.4.0+)
 
 The starter template includes these features out of the box:
 
-### Tabbed Settings Interface
+### Settings Page
 
-Three default tabs:
-1. **General** - Main plugin settings
-2. **Import / Export** - Backup and restore functionality
-3. **Data Management** - Data retention controls
+Child plugins have their own settings page with plugin-specific options. Data Management features (Export, Import, Data Retention) are centralized in the parent qTap App plugin.
 
-Add custom tabs using the filter:
+**Settings Page Features:**
+- Plugin-specific settings form
+- Accessibility mode indicator (when enabled in parent)
+- Link to parent's Data Management for export/import
+
+Add custom settings fields using the filter:
 ```php
-add_filter( 'kdc_qtap_starter_admin_tabs', function( $tabs ) {
-    $tabs['custom'] = __( 'Custom Tab', 'kdc-qtap-starter' );
-    return $tabs;
+add_action( 'kdc_qtap_starter_settings_fields', function( $settings ) {
+    // Add custom settings fields
 } );
 ```
 
-### Import/Export System
+### Parent Plugin Integration
 
-**Export Features:**
-- Download settings as JSON file
-- Copy settings to clipboard
-- Includes plugin version and site URL for reference
+Child plugins integrate with the parent qTap App for:
+- **Accessibility Mode** - WCAG AAA compliant CSS loaded when enabled
+- **Export** - Add data to parent's export via `kdc_qtap_export_data` filter
+- **Import** - Process imported data via `kdc_qtap_process_import` action
+- **Data Removal** - Clean up data via `kdc_qtap_remove_data` action
 
-**Import Features:**
-- Upload JSON backup file
-- Validates file format and plugin compatibility
-- Confirms before overwriting existing settings
+See the "Parent Plugin Integration" section below for full details.
 
-**Extend Export Data:**
+---
+
+## Parent Plugin Integration (v1.3.0+)
+
+qTap child plugins integrate with the parent qTap App plugin for centralized settings management. This ensures consistent behavior across all qTap apps.
+
+### Dependency on qTap App
+
+All qTap child plugins **require** the parent `kdc-qtap` plugin to be installed and activated. This is enforced through:
+
+1. **Plugin Header:** `Requires Plugins: kdc-qtap`
+2. **Runtime Check:** `function_exists( 'kdc_qtap_is_active' )`
+3. **Admin Notice:** Displayed if parent is missing
+
+### Accessibility Mode Integration
+
+The parent plugin (qTap App) provides a global **Accessibility Mode** setting that child plugins should respect.
+
+**How it works:**
+- Parent stores setting in `kdc_qtap_settings['enable_accessibility']`
+- Child plugins check via `kdc_qtap_is_accessibility_enabled()`
+- When enabled, child plugins load WCAG AAA compliant CSS
+
+**Implementation in child plugins:**
+
 ```php
-add_filter( 'kdc_qtap_starter_export_data', function( $data ) {
-    // Add custom data to export
-    $data['data']['custom_table'] = $wpdb->get_results( "SELECT * FROM {$wpdb->prefix}my_table" );
-    return $data;
-} );
-```
-
-**Process Custom Import:**
-```php
-add_action( 'kdc_qtap_starter_after_import', function( $import_data ) {
-    if ( isset( $import_data['data']['custom_table'] ) ) {
-        // Restore custom table data
-        foreach ( $import_data['data']['custom_table'] as $row ) {
-            $wpdb->insert( "{$wpdb->prefix}my_table", $row );
-        }
+// In your admin class
+public function enqueue_admin_assets( $hook_suffix ) {
+    if ( ! $this->is_plugin_page( $hook_suffix ) ) {
+        return;
     }
-} );
+
+    // Check parent's accessibility setting
+    if ( function_exists( 'kdc_qtap_is_accessibility_enabled' ) 
+         && kdc_qtap_is_accessibility_enabled() ) {
+        // Load WCAG AAA compliant CSS
+        wp_enqueue_style(
+            'my-app-admin',
+            MY_APP_URL . 'assets/css/admin-accessible.css',
+            array(),
+            MY_APP_VERSION
+        );
+    } else {
+        // Load standard CSS (minimal, using WP core classes)
+        wp_enqueue_style(
+            'my-app-admin',
+            MY_APP_URL . 'assets/css/admin.css',
+            array(),
+            MY_APP_VERSION
+        );
+    }
+}
 ```
 
-### Data Retention System
+**Listen for accessibility mode changes:**
 
-**Default Behavior:** Data is PRESERVED on uninstall (safe by default)
-
-**User Control:** "Delete data on uninstall" option in Data Management tab
-
-**When Delete is Enabled:**
-1. Warning box appears explaining what will be deleted
-2. Backup download link is prominently displayed
-3. Confirmation dialogs warn about irreversible action
-4. `uninstall.php` checks the setting before deleting
-
-**Add Custom Data to Cleanup:**
 ```php
-// In uninstall.php, add your cleanup code:
-
-// Delete custom options
-delete_option( 'kdc_qtap_myapp_custom_option' );
-
-// Delete custom tables
-$wpdb->query( "DROP TABLE IF EXISTS {$wpdb->prefix}kdc_qtap_myapp_logs" );
-
-// Delete user meta
-delete_metadata( 'user', 0, 'kdc_qtap_myapp_prefs', '', true );
+// React when user toggles accessibility mode in parent plugin
+add_action( 'kdc_qtap_accessibility_mode_changed', function( $enabled, $previous ) {
+    if ( $enabled ) {
+        // Clear any caches that might have styling info
+        delete_transient( 'my_app_cached_styles' );
+    }
+}, 10, 2 );
 ```
+
+### Data Management Integration
+
+The parent plugin provides centralized Data Management features that child plugins should integrate with.
+
+#### Export Integration
+
+Add your plugin's data to the parent's export:
+
+```php
+// Add export checkbox to parent's Data Management tab
+add_action( 'kdc_qtap_export_options', function() {
+    ?>
+    <label style="display: block; margin-bottom: 8px;">
+        <input type="checkbox" name="export_my_app" value="1" checked />
+        <?php esc_html_e( 'My App Settings', 'my-app' ); ?>
+    </label>
+    <?php
+});
+
+// Add data to parent's export file
+add_filter( 'kdc_qtap_export_data', function( $data, $post ) {
+    if ( ! empty( $post['export_my_app'] ) ) {
+        $data['my_app'] = array(
+            'version'  => MY_APP_VERSION,
+            'settings' => get_option( 'my_app_settings', array() ),
+            // Add any other data to export
+        );
+    }
+    return $data;
+}, 10, 2 );
+```
+
+#### Import Integration
+
+Process your plugin's data from parent's import:
+
+```php
+// Process import from parent's Data Management
+add_action( 'kdc_qtap_process_import', function( $import_data, $imported_count ) {
+    if ( ! empty( $import_data['my_app']['settings'] ) ) {
+        update_option( 'my_app_settings', $import_data['my_app']['settings'] );
+    }
+}, 10, 2 );
+```
+
+#### Data Removal Integration
+
+Respect parent's "Remove data on uninstall" setting:
+
+```php
+// In your main plugin class
+private function init_parent_integration() {
+    // Hook into parent's remove data action
+    add_action( 'kdc_qtap_remove_data', array( $this, 'remove_data_on_parent_uninstall' ) );
+}
+
+public function remove_data_on_parent_uninstall() {
+    // Delete this plugin's data when parent triggers removal
+    delete_option( 'my_app_settings' );
+    delete_option( 'my_app_version' );
+    delete_transient( 'my_app_cache' );
+}
+```
+
+**In uninstall.php:**
+
+```php
+// Check both local and parent settings
+$settings      = get_option( 'my_app_settings', array() );
+$local_delete  = isset( $settings['delete_data_on_uninstall'] ) && 'yes' === $settings['delete_data_on_uninstall'];
+$parent_delete = false;
+
+// Check parent plugin's setting
+$parent_settings = get_option( 'kdc_qtap_settings', array() );
+if ( ! empty( $parent_settings['remove_data_uninstall'] ) ) {
+    $parent_delete = true;
+}
+
+// Only delete if explicitly requested (local or parent)
+if ( ! $local_delete && ! $parent_delete ) {
+    return; // Preserve data
+}
+
+// Proceed with data deletion...
+```
+
+### Available Parent Plugin Hooks
+
+| Hook | Type | Description |
+|------|------|-------------|
+| `kdc_qtap_loaded` | Action | Fires when parent plugin is fully loaded |
+| `kdc_qtap_admin_menu` | Action | Fires after parent menu is registered |
+| `kdc_qtap_admin_enqueue_scripts` | Action | Fires when parent enqueues admin assets |
+| `kdc_qtap_accessibility_mode_changed` | Action | Fires when accessibility setting changes |
+| `kdc_qtap_default_settings` | Filter | Add default settings to parent |
+| `kdc_qtap_sanitize_settings` | Filter | Sanitize settings saved in parent |
+| `kdc_qtap_register_settings` | Action | Register settings with parent |
+| `kdc_qtap_export_options` | Action | Add export checkboxes to parent |
+| `kdc_qtap_export_data` | Filter | Add data to parent's export |
+| `kdc_qtap_import_options` | Action | Add import options to parent |
+| `kdc_qtap_process_import` | Action | Process imported data from parent |
+| `kdc_qtap_data_removal_fields` | Action | Add fields to parent's data removal |
+| `kdc_qtap_before_uninstall` | Action | Before parent uninstall cleanup |
+| `kdc_qtap_remove_data` | Action | When parent removes data |
+| `kdc_qtap_uninstall` | Action | After parent uninstall |
+
+### Available Parent Plugin Helper Functions
+
+| Function | Description |
+|----------|-------------|
+| `kdc_qtap_is_active()` | Check if parent plugin is active |
+| `kdc_qtap_is_accessibility_enabled()` | Check if accessibility mode is enabled |
+| `kdc_qtap_should_remove_data()` | Check if data should be removed on uninstall |
+| `kdc_qtap_get_settings( $key )` | Get parent plugin settings |
+| `kdc_qtap_version()` | Get parent plugin version |
+| `kdc_qtap_register_plugin( $data )` | Register child plugin with dashboard |
+
+### CSS Files Structure
+
+Child plugins should have TWO CSS files:
+
+1. **admin.css** - Minimal CSS using WordPress core classes (loaded by default)
+2. **admin-accessible.css** - WCAG AAA compliant CSS (loaded when accessibility mode enabled)
+
+```
+assets/
+├── css/
+│   ├── admin.css              # Standard (minimal, WP core classes)
+│   └── admin-accessible.css   # WCAG AAA compliant
+└── js/
+    └── admin.js
+```
+
+### WCAG AAA CSS Requirements
+
+When creating `admin-accessible.css`, ensure:
+
+| Requirement | Value |
+|-------------|-------|
+| Text contrast ratio | 7:1+ (AAA) |
+| Large text contrast | 4.5:1+ |
+| Focus indicators | 3px solid, high contrast |
+| Target size | Minimum 44×44 CSS pixels |
+| Reduced motion | `prefers-reduced-motion` support |
+| High contrast | `prefers-contrast: more` support |
+| Forced colors | `forced-colors: active` support |
 
 ---
 

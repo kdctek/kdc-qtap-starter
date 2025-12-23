@@ -3,13 +3,12 @@
  * Plugin Name:       qTap Starter
  * Plugin URI:        https://github.com/kdctek/kdc-qtap-starter
  * Description:       A starter template for building qTap App child plugins. <strong>Requires qTap App.</strong>
- * Version:           1.2.0
+ * Version:           1.4.0
  * Author:            KDC
  * Author URI:        https://kdc.in
  * License:           GPL v2 or later
  * License URI:       https://www.gnu.org/licenses/gpl-2.0.html
  * Text Domain:       kdc-qtap-starter
- * Domain Path:       /languages
  * Requires at least: 5.8
  * Tested up to:      6.9
  * Requires PHP:      7.4
@@ -35,7 +34,7 @@ if ( defined( 'KDC_QTAP_STARTER_VERSION' ) ) {
 /**
  * Plugin constants.
  */
-define( 'KDC_QTAP_STARTER_VERSION', '1.2.0' );
+define( 'KDC_QTAP_STARTER_VERSION', '1.4.0' );
 define( 'KDC_QTAP_STARTER_PLUGIN_FILE', __FILE__ );
 define( 'KDC_QTAP_STARTER_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'KDC_QTAP_STARTER_PLUGIN_URL', plugin_dir_url( __FILE__ ) );
@@ -114,9 +113,6 @@ final class KDC_qTap_Starter {
 	 * @since 1.0.0
 	 */
 	private function init_hooks() {
-		// Load translations first (WordPress 6.7+ requirement).
-		add_action( 'init', array( $this, 'load_textdomain' ), -1 );
-
 		// Check dependency and initialize.
 		add_action( 'plugins_loaded', array( $this, 'check_dependency' ), 5 );
 
@@ -140,12 +136,143 @@ final class KDC_qTap_Starter {
 			$this->load_dependencies();
 			$this->init_components();
 
-			// Register with qTap App dashboard.
-			add_action( 'kdc_qtap_loaded', array( $this, 'register_with_qtap' ) );
+			// Register with qTap App dashboard (after init to avoid translation loading too early).
+			add_action( 'init', array( $this, 'register_with_qtap' ) );
+
+			// Integrate with parent plugin hooks.
+			$this->init_parent_integration();
 		} else {
 			// Show admin notice if parent is missing.
 			add_action( 'admin_notices', array( $this, 'dependency_notice' ) );
 		}
+	}
+
+	/**
+	 * Initialize integration with parent plugin (qTap App) hooks.
+	 *
+	 * @since 1.3.0
+	 */
+	private function init_parent_integration() {
+		// Listen for accessibility mode changes.
+		add_action( 'kdc_qtap_accessibility_mode_changed', array( $this, 'on_accessibility_changed' ), 10, 2 );
+
+		// Add export data to parent's export.
+		add_filter( 'kdc_qtap_export_data', array( $this, 'add_to_parent_export' ), 10, 2 );
+
+		// Process import from parent's import.
+		add_action( 'kdc_qtap_process_import', array( $this, 'process_parent_import' ), 10, 2 );
+
+		// Add export checkbox to parent's Data Management.
+		add_action( 'kdc_qtap_export_options', array( $this, 'render_parent_export_option' ) );
+
+		// Hook into parent's remove data action.
+		add_action( 'kdc_qtap_remove_data', array( $this, 'remove_data_on_parent_uninstall' ) );
+	}
+
+	/**
+	 * Handle accessibility mode change from parent plugin.
+	 *
+	 * @since 1.3.0
+	 *
+	 * @param bool $enabled  New accessibility mode state.
+	 * @param bool $previous Previous accessibility mode state.
+	 */
+	public function on_accessibility_changed( $enabled, $previous ) {
+		/**
+		 * Fires when parent plugin's accessibility mode changes.
+		 *
+		 * Child plugins can use this to react to accessibility mode changes.
+		 *
+		 * @since 1.3.0
+		 * @param bool $enabled  Whether accessibility mode is now enabled.
+		 * @param bool $previous Previous state.
+		 */
+		do_action( 'kdc_qtap_starter_accessibility_changed', $enabled, $previous );
+	}
+
+	/**
+	 * Add this plugin's data to parent's export.
+	 *
+	 * @since 1.3.0
+	 *
+	 * @param array $data Export data array.
+	 * @param array $post Posted form data.
+	 * @return array Modified export data.
+	 */
+	public function add_to_parent_export( $data, $post ) {
+		// Check if our checkbox was selected.
+		if ( ! empty( $post['export_qtap_starter'] ) ) {
+			$data['qtap_starter'] = array(
+				'version'  => KDC_QTAP_STARTER_VERSION,
+				'settings' => get_option( 'kdc_qtap_starter_settings', array() ),
+			);
+
+			/**
+			 * Filter data added to parent's export.
+			 *
+			 * @since 1.3.0
+			 * @param array $starter_data This plugin's export data.
+			 */
+			$data['qtap_starter'] = apply_filters( 'kdc_qtap_starter_parent_export_data', $data['qtap_starter'] );
+		}
+		return $data;
+	}
+
+	/**
+	 * Process import from parent's Data Management.
+	 *
+	 * @since 1.3.0
+	 *
+	 * @param array $import_data Complete imported data array.
+	 * @param int   $imported_count Number of items imported so far.
+	 */
+	public function process_parent_import( $import_data, $imported_count ) {
+		if ( ! empty( $import_data['qtap_starter']['settings'] ) ) {
+			update_option( 'kdc_qtap_starter_settings', $import_data['qtap_starter']['settings'] );
+
+			/**
+			 * Fires after settings are imported from parent.
+			 *
+			 * @since 1.3.0
+			 * @param array $import_data The full imported data.
+			 */
+			do_action( 'kdc_qtap_starter_parent_import_complete', $import_data );
+		}
+	}
+
+	/**
+	 * Render export checkbox in parent's Data Management tab.
+	 *
+	 * @since 1.3.0
+	 */
+	public function render_parent_export_option() {
+		?>
+		<label style="display: block; margin-bottom: 8px;">
+			<input type="checkbox" name="export_qtap_starter" value="1" checked />
+			<?php esc_html_e( 'qTap Starter Settings', 'kdc-qtap-starter' ); ?>
+		</label>
+		<?php
+	}
+
+	/**
+	 * Remove plugin data when parent triggers data removal.
+	 *
+	 * This respects the parent's "Remove data on uninstall" setting.
+	 *
+	 * @since 1.3.0
+	 */
+	public function remove_data_on_parent_uninstall() {
+		// Delete this plugin's settings.
+		delete_option( 'kdc_qtap_starter_settings' );
+		delete_option( 'kdc_qtap_starter_version' );
+		delete_transient( 'kdc_qtap_starter_cache' );
+
+		/**
+		 * Fires when parent triggers data removal.
+		 *
+		 * @since 1.3.0
+		 */
+		do_action( 'kdc_qtap_starter_parent_remove_data' );
 	}
 
 	/**
@@ -205,35 +332,15 @@ final class KDC_qTap_Starter {
 	/**
 	 * Load required files.
 	 *
-	 * Only called when qTap App is active.
-	 *
 	 * @since 1.0.0
 	 */
 	private function load_dependencies() {
 		// Core classes.
 		require_once KDC_QTAP_STARTER_PLUGIN_DIR . 'includes/class-kdc-qtap-starter-admin.php';
-
-		// Add additional includes here.
-		// require_once KDC_QTAP_STARTER_PLUGIN_DIR . 'includes/class-kdc-qtap-starter-frontend.php';
-	}
-
-	/**
-	 * Load plugin translations.
-	 *
-	 * @since 1.0.0
-	 */
-	public function load_textdomain() {
-		load_plugin_textdomain(
-			'kdc-qtap-starter',
-			false,
-			dirname( KDC_QTAP_STARTER_PLUGIN_BASENAME ) . '/languages'
-		);
 	}
 
 	/**
 	 * Initialize plugin components.
-	 *
-	 * Only called when qTap App is active.
 	 *
 	 * @since 1.0.0
 	 */
@@ -242,11 +349,6 @@ final class KDC_qTap_Starter {
 		if ( is_admin() ) {
 			KDC_qTap_Starter_Admin::get_instance();
 		}
-
-		// Initialize frontend components here.
-		// if ( ! is_admin() ) {
-		//     KDC_qTap_Starter_Frontend::get_instance();
-		// }
 
 		/**
 		 * Fires after qTap Starter components are initialized.
@@ -259,10 +361,12 @@ final class KDC_qTap_Starter {
 	/**
 	 * Register this app with qTap App dashboard.
 	 *
+	 * Called on 'init' action to ensure translations are loaded.
+	 *
 	 * @since 1.0.0
-	 * @param KDC_qTap_Dashboard $qtap The qTap App instance.
+	 * @since 1.3.1 Changed hook from kdc_qtap_loaded to init.
 	 */
-	public function register_with_qtap( $qtap ) {
+	public function register_with_qtap() {
 		if ( function_exists( 'kdc_qtap_register_plugin' ) ) {
 			kdc_qtap_register_plugin(
 				array(
@@ -287,6 +391,36 @@ final class KDC_qTap_Starter {
 	 */
 	public function is_parent_active() {
 		return $this->parent_active;
+	}
+
+	/**
+	 * Check if accessibility mode is enabled (from parent plugin).
+	 *
+	 * @since  1.3.0
+	 * @return bool
+	 */
+	public function is_accessibility_enabled() {
+		if ( function_exists( 'kdc_qtap_is_accessibility_enabled' ) ) {
+			return kdc_qtap_is_accessibility_enabled();
+		}
+		return false;
+	}
+
+	/**
+	 * Check if data should be removed on uninstall (from parent plugin).
+	 *
+	 * @since  1.3.0
+	 * @return bool
+	 */
+	public function should_remove_data() {
+		// Check parent's setting first.
+		if ( function_exists( 'kdc_qtap_should_remove_data' ) && kdc_qtap_should_remove_data() ) {
+			return true;
+		}
+
+		// Fall back to local setting.
+		$settings = get_option( 'kdc_qtap_starter_settings', array() );
+		return isset( $settings['delete_data_on_uninstall'] ) && 'yes' === $settings['delete_data_on_uninstall'];
 	}
 
 	/**
@@ -400,6 +534,16 @@ function kdc_qtap_starter() {
  */
 function kdc_qtap_starter_is_active() {
 	return true;
+}
+
+/**
+ * Check if accessibility mode is enabled (wrapper function).
+ *
+ * @since  1.3.0
+ * @return bool
+ */
+function kdc_qtap_starter_is_accessibility_enabled() {
+	return kdc_qtap_starter()->is_accessibility_enabled();
 }
 
 // Initialize the plugin.
