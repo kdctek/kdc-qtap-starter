@@ -312,19 +312,202 @@ delete_metadata( 'user', 0, 'kdc_qtap_myapp_prefs', '', true );
 
 ---
 
-## File Naming Convention
+## File Naming Convention (WordPress Coding Standards)
 
-When Claude creates files, ensure they follow this pattern:
+All files in qTap App child plugins MUST follow WordPress Coding Standards and use the `kdc-qtap-{slug}-` prefix consistently.
 
-| File Type | Naming Pattern |
-|-----------|----------------|
-| Main plugin | `kdc-qtap-{slug}.php` |
-| Classes | `class-kdc-qtap-{slug}-{name}.php` |
-| Admin CSS | `assets/css/admin.css` |
-| Admin JS | `assets/js/admin.js` |
-| Frontend CSS | `assets/css/frontend.css` |
-| Frontend JS | `assets/js/frontend.js` |
-| Templates | `templates/{template-name}.php` |
+### Plugin Folder Structure
+
+```
+kdc-qtap-{slug}/
+├── kdc-qtap-{slug}.php              # Main plugin file
+├── uninstall.php                     # Uninstall handler
+├── includes/
+│   ├── kdc-qtap-shared-menu.php     # Shared fallback menu (same in all plugins)
+│   ├── class-kdc-qtap-{slug}-admin.php
+│   ├── class-kdc-qtap-{slug}-settings.php
+│   ├── class-kdc-qtap-{slug}-{feature}.php
+│   └── helper-functions.php          # Optional helper functions
+├── assets/
+│   ├── css/
+│   │   ├── kdc-qtap-{slug}-admin.css
+│   │   └── kdc-qtap-{slug}-frontend.css
+│   └── js/
+│       ├── kdc-qtap-{slug}-admin.js
+│       └── kdc-qtap-{slug}-frontend.js
+├── templates/
+│   └── kdc-qtap-{slug}-{template-name}.php
+└── languages/
+    └── kdc-qtap-{slug}.pot
+```
+
+### File Naming Rules
+
+| File Type | Pattern | Example (for `mobile` slug) |
+|-----------|---------|----------------------------|
+| **Main plugin file** | `kdc-qtap-{slug}.php` | `kdc-qtap-mobile.php` |
+| **Class files** | `class-kdc-qtap-{slug}-{name}.php` | `class-kdc-qtap-mobile-admin.php` |
+| **Shared menu** | `kdc-qtap-shared-menu.php` | `kdc-qtap-shared-menu.php` (same in all) |
+| **Admin CSS** | `kdc-qtap-{slug}-admin.css` | `kdc-qtap-mobile-admin.css` |
+| **Admin JS** | `kdc-qtap-{slug}-admin.js` | `kdc-qtap-mobile-admin.js` |
+| **Frontend CSS** | `kdc-qtap-{slug}-frontend.css` | `kdc-qtap-mobile-frontend.css` |
+| **Frontend JS** | `kdc-qtap-{slug}-frontend.js` | `kdc-qtap-mobile-frontend.js` |
+| **Templates** | `kdc-qtap-{slug}-{name}.php` | `kdc-qtap-mobile-form.php` |
+| **Helper functions** | `helper-functions.php` | `helper-functions.php` |
+
+### Class Naming (matches file names)
+
+```php
+// File: class-kdc-qtap-mobile-admin.php
+class KDC_qTap_Mobile_Admin { ... }
+
+// File: class-kdc-qtap-mobile-settings.php
+class KDC_qTap_Mobile_Settings { ... }
+
+// File: class-kdc-qtap-mobile-api.php
+class KDC_qTap_Mobile_API { ... }
+```
+
+### Constants (defined in main plugin file)
+
+```php
+// All constants MUST be prefixed with KDC_QTAP_{SLUG}_
+define( 'KDC_QTAP_MOBILE_VERSION', '1.0.0' );
+define( 'KDC_QTAP_MOBILE_PLUGIN_FILE', __FILE__ );
+define( 'KDC_QTAP_MOBILE_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
+define( 'KDC_QTAP_MOBILE_PLUGIN_URL', plugin_dir_url( __FILE__ ) );
+define( 'KDC_QTAP_MOBILE_PLUGIN_BASENAME', plugin_basename( __FILE__ ) );
+```
+
+### Function Naming
+
+```php
+// Global functions (if any) MUST be prefixed
+function kdc_qtap_mobile_get_settings() { ... }
+function kdc_qtap_mobile_is_enabled() { ... }
+
+// Helper functions can use shorter prefix if in namespaced file
+function qtap_mobile_format_phone( $phone ) { ... }
+```
+
+### Hook/Filter Naming
+
+```php
+// Actions
+do_action( 'kdc_qtap_mobile_loaded' );
+do_action( 'kdc_qtap_mobile_settings_saved', $settings );
+do_action( 'kdc_qtap_mobile_before_render' );
+
+// Filters
+apply_filters( 'kdc_qtap_mobile_admin_tabs', $tabs );
+apply_filters( 'kdc_qtap_mobile_settings', $settings );
+apply_filters( 'kdc_qtap_mobile_capability', 'manage_options' );
+```
+
+### Option Names (stored in wp_options)
+
+```php
+// Use underscores, prefixed with kdc_qtap_{slug}_
+'kdc_qtap_mobile_settings'
+'kdc_qtap_mobile_version'
+'kdc_qtap_mobile_delete_data_on_uninstall'
+```
+
+### User Meta Keys
+
+```php
+// Prefixed with kdc_qtap_{slug}_
+'kdc_qtap_mobile_numbers'
+'kdc_qtap_mobile_preferences'
+```
+
+### Database Tables
+
+```php
+// Use {$wpdb->prefix}kdc_qtap_{slug}_{table}
+$wpdb->prefix . 'kdc_qtap_mobile_logs'
+$wpdb->prefix . 'kdc_qtap_mobile_tokens'
+```
+
+### Enqueue Handles
+
+```php
+// CSS handles
+wp_enqueue_style( 'kdc-qtap-mobile-admin', ... );
+wp_enqueue_style( 'kdc-qtap-mobile-frontend', ... );
+
+// JS handles
+wp_enqueue_script( 'kdc-qtap-mobile-admin', ... );
+wp_enqueue_script( 'kdc-qtap-mobile-frontend', ... );
+
+// Localization object name
+wp_localize_script( 'kdc-qtap-mobile-admin', 'kdcQtapMobileAdmin', array( ... ) );
+```
+
+### Nonce Actions
+
+```php
+// Prefixed nonce actions
+wp_nonce_field( 'kdc_qtap_mobile_save_settings' );
+wp_verify_nonce( $_POST['_wpnonce'], 'kdc_qtap_mobile_save_settings' );
+
+// AJAX nonces
+check_ajax_referer( 'kdc_qtap_mobile_ajax', 'nonce' );
+```
+
+### AJAX Actions
+
+```php
+// Admin AJAX
+add_action( 'wp_ajax_kdc_qtap_mobile_save', array( $this, 'ajax_save' ) );
+
+// Frontend AJAX (logged in)
+add_action( 'wp_ajax_kdc_qtap_mobile_submit', array( $this, 'ajax_submit' ) );
+
+// Frontend AJAX (not logged in)
+add_action( 'wp_ajax_nopriv_kdc_qtap_mobile_submit', array( $this, 'ajax_submit' ) );
+```
+
+### REST API Namespaces
+
+```php
+// Namespace: kdc-qtap-{slug}/v1
+register_rest_route( 'kdc-qtap-mobile/v1', '/settings', array( ... ) );
+register_rest_route( 'kdc-qtap-mobile/v1', '/verify', array( ... ) );
+```
+
+### Transient Names
+
+```php
+// Prefixed transients
+set_transient( 'kdc_qtap_mobile_cache', $data, HOUR_IN_SECONDS );
+get_transient( 'kdc_qtap_mobile_cache' );
+```
+
+### Cron Hook Names
+
+```php
+// Prefixed cron hooks
+add_action( 'kdc_qtap_mobile_cleanup', array( $this, 'run_cleanup' ) );
+wp_schedule_event( time(), 'daily', 'kdc_qtap_mobile_cleanup' );
+```
+
+### Quick Reference Table
+
+| Element | Prefix/Format | Example |
+|---------|--------------|---------|
+| Plugin folder | `kdc-qtap-{slug}` | `kdc-qtap-mobile` |
+| Main file | `kdc-qtap-{slug}.php` | `kdc-qtap-mobile.php` |
+| Class files | `class-kdc-qtap-{slug}-*.php` | `class-kdc-qtap-mobile-admin.php` |
+| Class names | `KDC_qTap_{Slug}_*` | `KDC_qTap_Mobile_Admin` |
+| Constants | `KDC_QTAP_{SLUG}_*` | `KDC_QTAP_MOBILE_VERSION` |
+| Functions | `kdc_qtap_{slug}_*()` | `kdc_qtap_mobile_init()` |
+| Hooks | `kdc_qtap_{slug}_*` | `kdc_qtap_mobile_loaded` |
+| Options | `kdc_qtap_{slug}_*` | `kdc_qtap_mobile_settings` |
+| CSS/JS handles | `kdc-qtap-{slug}-*` | `kdc-qtap-mobile-admin` |
+| Text domain | `kdc-qtap-{slug}` | `kdc-qtap-mobile` |
+| REST namespace | `kdc-qtap-{slug}/v1` | `kdc-qtap-mobile/v1` |
+| DB tables | `{prefix}kdc_qtap_{slug}_*` | `wp_kdc_qtap_mobile_logs` |
 
 ---
 
