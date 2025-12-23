@@ -2,8 +2,8 @@
 /**
  * Plugin Name:       qTap Starter
  * Plugin URI:        https://github.com/kdctek/kdc-qtap-starter
- * Description:       A starter template for building qTap App child plugins. Replace this with your app description.
- * Version:           1.1.2
+ * Description:       A starter template for building qTap App child plugins. <strong>Requires qTap App.</strong>
+ * Version:           1.2.0
  * Author:            KDC
  * Author URI:        https://kdc.in
  * License:           GPL v2 or later
@@ -13,6 +13,7 @@
  * Requires at least: 5.8
  * Tested up to:      6.9
  * Requires PHP:      7.4
+ * Requires Plugins:  kdc-qtap
  *
  * WC requires at least: 5.0
  * WC tested up to:      8.4
@@ -34,11 +35,16 @@ if ( defined( 'KDC_QTAP_STARTER_VERSION' ) ) {
 /**
  * Plugin constants.
  */
-define( 'KDC_QTAP_STARTER_VERSION', '1.1.2' );
+define( 'KDC_QTAP_STARTER_VERSION', '1.2.0' );
 define( 'KDC_QTAP_STARTER_PLUGIN_FILE', __FILE__ );
 define( 'KDC_QTAP_STARTER_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'KDC_QTAP_STARTER_PLUGIN_URL', plugin_dir_url( __FILE__ ) );
 define( 'KDC_QTAP_STARTER_PLUGIN_BASENAME', plugin_basename( __FILE__ ) );
+
+/**
+ * Required parent plugin slug.
+ */
+define( 'KDC_QTAP_STARTER_REQUIRED_PARENT', 'kdc-qtap/kdc-qtap.php' );
 
 /**
  * Main qTap Starter Class.
@@ -54,6 +60,14 @@ final class KDC_qTap_Starter {
 	 * @var   KDC_qTap_Starter|null
 	 */
 	private static $instance = null;
+
+	/**
+	 * Whether the required parent plugin is active.
+	 *
+	 * @since 1.2.0
+	 * @var   bool
+	 */
+	private $parent_active = false;
 
 	/**
 	 * Get the singleton instance.
@@ -74,7 +88,6 @@ final class KDC_qTap_Starter {
 	 * @since 1.0.0
 	 */
 	private function __construct() {
-		$this->load_dependencies();
 		$this->init_hooks();
 	}
 
@@ -96,35 +109,16 @@ final class KDC_qTap_Starter {
 	}
 
 	/**
-	 * Load required files.
-	 *
-	 * @since 1.0.0
-	 */
-	private function load_dependencies() {
-		// Shared menu functions (load first).
-		require_once KDC_QTAP_STARTER_PLUGIN_DIR . 'includes/kdc-qtap-shared-menu.php';
-
-		// Core classes.
-		require_once KDC_QTAP_STARTER_PLUGIN_DIR . 'includes/class-kdc-qtap-starter-admin.php';
-
-		// Add additional includes here.
-		// require_once KDC_QTAP_STARTER_PLUGIN_DIR . 'includes/class-kdc-qtap-starter-frontend.php';
-	}
-
-	/**
 	 * Initialize hooks.
 	 *
 	 * @since 1.0.0
 	 */
 	private function init_hooks() {
-		// Load translations.
-		add_action( 'init', array( $this, 'load_textdomain' ), 5 );
+		// Load translations first (WordPress 6.7+ requirement).
+		add_action( 'init', array( $this, 'load_textdomain' ), -1 );
 
-		// Initialize components.
-		add_action( 'plugins_loaded', array( $this, 'init_components' ), 10 );
-
-		// Register with qTap App dashboard.
-		add_action( 'init', array( $this, 'register_with_qtap' ), 20 );
+		// Check dependency and initialize.
+		add_action( 'plugins_loaded', array( $this, 'check_dependency' ), 5 );
 
 		// Declare WooCommerce compatibility.
 		add_action( 'before_woocommerce_init', array( $this, 'declare_wc_compatibility' ) );
@@ -132,6 +126,95 @@ final class KDC_qTap_Starter {
 		// Activation and deactivation hooks.
 		register_activation_hook( KDC_QTAP_STARTER_PLUGIN_FILE, array( $this, 'activate' ) );
 		register_deactivation_hook( KDC_QTAP_STARTER_PLUGIN_FILE, array( $this, 'deactivate' ) );
+	}
+
+	/**
+	 * Check if qTap App (parent plugin) is active.
+	 *
+	 * @since 1.2.0
+	 */
+	public function check_dependency() {
+		// Check if qTap App is active.
+		if ( function_exists( 'kdc_qtap_is_active' ) && kdc_qtap_is_active() ) {
+			$this->parent_active = true;
+			$this->load_dependencies();
+			$this->init_components();
+
+			// Register with qTap App dashboard.
+			add_action( 'kdc_qtap_loaded', array( $this, 'register_with_qtap' ) );
+		} else {
+			// Show admin notice if parent is missing.
+			add_action( 'admin_notices', array( $this, 'dependency_notice' ) );
+		}
+	}
+
+	/**
+	 * Display admin notice when qTap App is not active.
+	 *
+	 * @since 1.2.0
+	 */
+	public function dependency_notice() {
+		// Only show to users who can install plugins.
+		if ( ! current_user_can( 'install_plugins' ) ) {
+			return;
+		}
+
+		// Check if qTap App is installed but not active.
+		$plugins        = get_plugins();
+		$qtap_installed = isset( $plugins[ KDC_QTAP_STARTER_REQUIRED_PARENT ] );
+
+		if ( $qtap_installed ) {
+			// Plugin installed but not active - show activate link.
+			$activate_url = wp_nonce_url(
+				admin_url( 'plugins.php?action=activate&plugin=' . KDC_QTAP_STARTER_REQUIRED_PARENT ),
+				'activate-plugin_' . KDC_QTAP_STARTER_REQUIRED_PARENT
+			);
+			$message = sprintf(
+				/* translators: 1: Plugin name, 2: Required plugin name, 3: Activate link */
+				__( '%1$s requires %2$s to be activated. %3$s', 'kdc-qtap-starter' ),
+				'<strong>qTap Starter</strong>',
+				'<strong>qTap App</strong>',
+				'<a href="' . esc_url( $activate_url ) . '">' . __( 'Activate now', 'kdc-qtap-starter' ) . '</a>'
+			);
+		} else {
+			// Plugin not installed - show install/download links.
+			$message = sprintf(
+				/* translators: 1: Plugin name, 2: Required plugin name, 3: Download link */
+				__( '%1$s requires %2$s to be installed and activated. %3$s', 'kdc-qtap-starter' ),
+				'<strong>qTap Starter</strong>',
+				'<strong>qTap App</strong>',
+				'<a href="https://qtap.app" target="_blank">' . __( 'Download from qtap.app', 'kdc-qtap-starter' ) . '</a>'
+			);
+		}
+
+		printf(
+			'<div class="notice notice-error"><p>%s</p></div>',
+			wp_kses(
+				$message,
+				array(
+					'strong' => array(),
+					'a'      => array(
+						'href'   => array(),
+						'target' => array(),
+					),
+				)
+			)
+		);
+	}
+
+	/**
+	 * Load required files.
+	 *
+	 * Only called when qTap App is active.
+	 *
+	 * @since 1.0.0
+	 */
+	private function load_dependencies() {
+		// Core classes.
+		require_once KDC_QTAP_STARTER_PLUGIN_DIR . 'includes/class-kdc-qtap-starter-admin.php';
+
+		// Add additional includes here.
+		// require_once KDC_QTAP_STARTER_PLUGIN_DIR . 'includes/class-kdc-qtap-starter-frontend.php';
 	}
 
 	/**
@@ -150,9 +233,11 @@ final class KDC_qTap_Starter {
 	/**
 	 * Initialize plugin components.
 	 *
+	 * Only called when qTap App is active.
+	 *
 	 * @since 1.0.0
 	 */
-	public function init_components() {
+	private function init_components() {
 		// Initialize admin.
 		if ( is_admin() ) {
 			KDC_qTap_Starter_Admin::get_instance();
@@ -162,15 +247,22 @@ final class KDC_qTap_Starter {
 		// if ( ! is_admin() ) {
 		//     KDC_qTap_Starter_Frontend::get_instance();
 		// }
+
+		/**
+		 * Fires after qTap Starter components are initialized.
+		 *
+		 * @since 1.2.0
+		 */
+		do_action( 'kdc_qtap_starter_loaded' );
 	}
 
 	/**
 	 * Register this app with qTap App dashboard.
 	 *
 	 * @since 1.0.0
+	 * @param KDC_qTap_Dashboard $qtap The qTap App instance.
 	 */
-	public function register_with_qtap() {
-		// Register with qTap App dashboard (if installed).
+	public function register_with_qtap( $qtap ) {
 		if ( function_exists( 'kdc_qtap_register_plugin' ) ) {
 			kdc_qtap_register_plugin(
 				array(
@@ -185,30 +277,16 @@ final class KDC_qTap_Starter {
 				)
 			);
 		}
-
-		// Register with fallback dashboard (when qTap App not installed).
-		add_filter( 'kdc_qtap_fallback_dashboard_cards', array( $this, 'register_fallback_card' ) );
 	}
 
 	/**
-	 * Register card for fallback dashboard.
+	 * Check if qTap App (parent) is active.
 	 *
-	 * @since  1.1.1
-	 * @param  array $cards Existing cards.
-	 * @return array        Updated cards.
+	 * @since  1.2.0
+	 * @return bool
 	 */
-	public function register_fallback_card( $cards ) {
-		$cards['starter'] = array(
-			'id'           => 'starter',
-			'name'         => __( 'Starter', 'kdc-qtap-starter' ),
-			'description'  => __( 'A starter template for qTap apps.', 'kdc-qtap-starter' ),
-			'icon'         => '🚀',
-			'settings_url' => admin_url( 'admin.php?page=kdc-qtap-starter' ),
-			'version'      => KDC_QTAP_STARTER_VERSION,
-			'is_active'    => true,
-			'priority'     => 50,
-		);
-		return $cards;
+	public function is_parent_active() {
+		return $this->parent_active;
 	}
 
 	/**
@@ -243,9 +321,6 @@ final class KDC_qTap_Starter {
 			add_option( 'kdc_qtap_starter_settings', $defaults );
 		}
 
-		// Flush rewrite rules if needed.
-		// flush_rewrite_rules();
-
 		/**
 		 * Fires when the plugin is activated.
 		 *
@@ -260,12 +335,6 @@ final class KDC_qTap_Starter {
 	 * @since 1.0.0
 	 */
 	public function deactivate() {
-		// Clean up temporary data.
-		// delete_transient( 'kdc_qtap_starter_cache' );
-
-		// Flush rewrite rules if needed.
-		// flush_rewrite_rules();
-
 		/**
 		 * Fires when the plugin is deactivated.
 		 *

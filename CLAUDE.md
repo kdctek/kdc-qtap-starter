@@ -70,17 +70,17 @@ https://raw.githubusercontent.com/kdctek/kdc-qtap-starter/refs/heads/main/CLAUDE
 Please create the plugin following the latest CLAUDE.md guidelines, including:
 1. WordPress Coding Standards compliance (TABS, PHPDoc, escaping, sanitization)
 2. Plugin URI format: https://qtap.app/app/{slug} (e.g., kdc-qtap-mobile → https://qtap.app/app/mobile)
-3. Proper integration with qTap App dashboard (register with dashboard when available)
-4. Shared fallback menu support (uses kdc_qtap_ensure_fallback_menu() - no duplicate menus)
+3. **Requires qTap App** - use `Requires Plugins: kdc-qtap` header and dependency check
+4. Integration with qTap App dashboard via `kdc_qtap_admin_menu` hook
 5. Tabbed settings interface (General, Import/Export, Data Management)
 6. Import/Export functionality for settings backup as JSON
 7. Data retention: preserve user data on uninstall by default
 8. "Delete data on uninstall" option with backup prompt and irreversible warning
 9. Use WordPress core CSS classes for admin UI (button, form-table, notice, nav-tab, etc.)
 10. Minimal custom CSS - only when WordPress core classes don't exist
-11. All necessary files: main plugin file, admin class, shared menu helper, CSS, JS, uninstall.php
+11. All necessary files: main plugin file, admin class, CSS, JS, uninstall.php
 12. Proper sanitization, escaping, and nonce verification
-13. Translation-ready strings
+13. Translation-ready strings (with `load_plugin_textdomain` at `init` priority -1)
 14. Appropriate hooks and filters for extensibility
 15. Author: KDC (https://kdc.in)
 ```
@@ -136,8 +136,8 @@ https://raw.githubusercontent.com/kdctek/kdc-qtap-starter/refs/heads/main/CLAUDE
 
 Please create the plugin with:
 1. WordPress Coding Standards compliance
-2. Proper integration with qTap App dashboard
-3. Standalone mode
+2. **Requires qTap App** dependency
+3. Integration with qTap App dashboard
 4. All necessary files
 5. Proper security
 6. Translation-ready
@@ -323,7 +323,6 @@ kdc-qtap-{slug}/
 ├── kdc-qtap-{slug}.php              # Main plugin file
 ├── uninstall.php                     # Uninstall handler
 ├── includes/
-│   ├── kdc-qtap-shared-menu.php     # Shared fallback menu (same in all plugins)
 │   ├── class-kdc-qtap-{slug}-admin.php
 │   ├── class-kdc-qtap-{slug}-settings.php
 │   ├── class-kdc-qtap-{slug}-{feature}.php
@@ -347,7 +346,6 @@ kdc-qtap-{slug}/
 |-----------|---------|----------------------------|
 | **Main plugin file** | `kdc-qtap-{slug}.php` | `kdc-qtap-mobile.php` |
 | **Class files** | `class-kdc-qtap-{slug}-{name}.php` | `class-kdc-qtap-mobile-admin.php` |
-| **Shared menu** | `kdc-qtap-shared-menu.php` | `kdc-qtap-shared-menu.php` (same in all) |
 | **Admin CSS** | `kdc-qtap-{slug}-admin.css` | `kdc-qtap-mobile-admin.css` |
 | **Admin JS** | `kdc-qtap-{slug}-admin.js` | `kdc-qtap-mobile-admin.js` |
 | **Frontend CSS** | `kdc-qtap-{slug}-frontend.css` | `kdc-qtap-mobile-frontend.css` |
@@ -623,29 +621,140 @@ public function register_with_qtap() {
 | 70-90 | Utility/secondary apps |
 | 100+ | Low priority apps |
 
-### Standalone Mode & Fallback Dashboard
+### Dependency Requirement (qTap App Required)
 
-When qTap App is NOT installed, child plugins should still show their cards on a fallback dashboard. This requires **two registrations**:
+All qTap child plugins **require qTap App** to be installed and activated. This follows the standard WordPress pattern used by WooCommerce extensions, Elementor addons, etc.
 
-1. **qTap App Dashboard** - via `kdc_qtap_register_plugin()` (when qTap App installed)
-2. **Fallback Dashboard** - via `kdc_qtap_fallback_dashboard_cards` filter (when qTap App NOT installed)
+**Benefits:**
+- Single source of truth for dashboard code
+- Consistent updates across all child plugins
+- Simpler child plugins (no duplicate code)
+- No function conflicts between plugins
+- Clear user expectation
 
-### Fallback Dashboard Registration
+### Plugin Header
 
-The fallback dashboard uses a filter hook for child plugins to register their cards:
+Add the `Requires Plugins` header (WordPress 6.5+):
+
+```php
+<?php
+/**
+ * Plugin Name: qTap Email
+ * Description: SMTP email with logging. <strong>Requires qTap App.</strong>
+ * Requires Plugins: kdc-qtap
+ */
+```
+
+### Dependency Check
+
+Child plugins must check for qTap App and show an admin notice if missing:
 
 ```php
 /**
- * Register with both dashboards.
+ * Required parent plugin slug.
  */
-public function register_with_qtap() {
-    // Register with qTap App dashboard (if installed).
+define( 'KDC_QTAP_EMAIL_REQUIRED_PARENT', 'kdc-qtap/kdc-qtap.php' );
+
+/**
+ * Check if qTap App is active.
+ */
+public function check_dependency() {
+    if ( function_exists( 'kdc_qtap_is_active' ) && kdc_qtap_is_active() ) {
+        $this->parent_active = true;
+        $this->load_dependencies();
+        $this->init_components();
+        
+        // Register with qTap App dashboard.
+        add_action( 'kdc_qtap_loaded', array( $this, 'register_with_qtap' ) );
+    } else {
+        // Show admin notice if parent is missing.
+        add_action( 'admin_notices', array( $this, 'dependency_notice' ) );
+    }
+}
+
+/**
+ * Display admin notice when qTap App is not active.
+ */
+public function dependency_notice() {
+    if ( ! current_user_can( 'install_plugins' ) ) {
+        return;
+    }
+
+    $plugins        = get_plugins();
+    $qtap_installed = isset( $plugins[ KDC_QTAP_EMAIL_REQUIRED_PARENT ] );
+
+    if ( $qtap_installed ) {
+        $activate_url = wp_nonce_url(
+            admin_url( 'plugins.php?action=activate&plugin=' . KDC_QTAP_EMAIL_REQUIRED_PARENT ),
+            'activate-plugin_' . KDC_QTAP_EMAIL_REQUIRED_PARENT
+        );
+        $message = sprintf(
+            __( '%1$s requires %2$s to be activated. %3$s', 'kdc-qtap-email' ),
+            '<strong>qTap Email</strong>',
+            '<strong>qTap App</strong>',
+            '<a href="' . esc_url( $activate_url ) . '">' . __( 'Activate now', 'kdc-qtap-email' ) . '</a>'
+        );
+    } else {
+        $message = sprintf(
+            __( '%1$s requires %2$s to be installed and activated. %3$s', 'kdc-qtap-email' ),
+            '<strong>qTap Email</strong>',
+            '<strong>qTap App</strong>',
+            '<a href="https://qtap.app" target="_blank">' . __( 'Download from qtap.app', 'kdc-qtap-email' ) . '</a>'
+        );
+    }
+
+    printf( '<div class="notice notice-error"><p>%s</p></div>', wp_kses( $message, array(
+        'strong' => array(),
+        'a'      => array( 'href' => array(), 'target' => array() ),
+    ) ) );
+}
+```
+
+### Admin Menu Registration
+
+Use qTap App's `kdc_qtap_admin_menu` hook instead of `admin_menu`:
+
+```php
+private function init_hooks() {
+    // Use qTap App's admin menu hook (requires qTap App).
+    add_action( 'kdc_qtap_admin_menu', array( $this, 'add_admin_menu' ), 10, 2 );
+}
+
+/**
+ * Add admin menu as submenu of qTap App.
+ *
+ * @param string $parent_slug The parent menu slug (kdc-qtap).
+ * @param string $capability  The required capability.
+ */
+public function add_admin_menu( $parent_slug, $capability ) {
+    add_submenu_page(
+        $parent_slug,
+        __( 'Email Settings', 'kdc-qtap-email' ),
+        __( 'Email', 'kdc-qtap-email' ),
+        $capability,
+        'kdc-qtap-email',
+        array( $this, 'render_settings_page' )
+    );
+}
+```
+
+### Dashboard Registration
+
+Register with qTap App dashboard via the `kdc_qtap_loaded` hook:
+
+```php
+/**
+ * Register with qTap App dashboard.
+ *
+ * @param KDC_qTap_Dashboard $qtap The qTap App instance.
+ */
+public function register_with_qtap( $qtap ) {
     if ( function_exists( 'kdc_qtap_register_plugin' ) ) {
         kdc_qtap_register_plugin(
             array(
                 'id'           => 'email',
                 'name'         => __( 'Email', 'kdc-qtap-email' ),
-                'description'  => __( 'SMTP email with logging.', 'kdc-qtap-email' ),
+                'description'  => __( 'SMTP email with logging and templates.', 'kdc-qtap-email' ),
                 'icon'         => '📧',
                 'settings_url' => admin_url( 'admin.php?page=kdc-qtap-email' ),
                 'version'      => KDC_QTAP_EMAIL_VERSION,
@@ -654,114 +763,12 @@ public function register_with_qtap() {
             )
         );
     }
-
-    // ALWAYS register with fallback dashboard (shown when qTap App NOT installed).
-    add_filter( 'kdc_qtap_fallback_dashboard_cards', array( $this, 'register_fallback_card' ) );
-}
-
-/**
- * Register card for fallback dashboard.
- *
- * @param  array $cards Existing cards.
- * @return array        Updated cards.
- */
-public function register_fallback_card( $cards ) {
-    $cards['email'] = array(
-        'id'           => 'email',
-        'name'         => __( 'Email', 'kdc-qtap-email' ),
-        'description'  => __( 'SMTP email with logging.', 'kdc-qtap-email' ),
-        'icon'         => '📧',
-        'settings_url' => admin_url( 'admin.php?page=kdc-qtap-email' ),
-        'version'      => KDC_QTAP_EMAIL_VERSION,
-        'is_active'    => true,
-        'priority'     => 30,
-    );
-    return $cards;
-}
-```
-
-### Fallback Dashboard Functions
-
-The shared menu file (`kdc-qtap-shared-menu.php`) provides these functions:
-
-| Function | Description |
-|----------|-------------|
-| `kdc_qtap_render_fallback_dashboard()` | Renders the fallback dashboard with all registered cards |
-| `kdc_qtap_render_dashboard_card( $card )` | Renders a single app card |
-| `kdc_qtap_register_fallback_card( $cards, $card )` | Helper to add a card to the array |
-
-### Fallback Dashboard Hooks
-
-| Hook | Type | Description |
-|------|------|-------------|
-| `kdc_qtap_fallback_dashboard_cards` | Filter | Register app cards for fallback dashboard |
-| `kdc_qtap_fallback_dashboard_after_cards` | Action | Add content after the cards grid |
-
-### Complete Example
-
-```php
-<?php
-class KDC_qTap_Email {
-
-    public function __construct() {
-        $this->init_hooks();
-    }
-
-    private function init_hooks() {
-        // Register with dashboards at priority 20 (after qTap initializes)
-        add_action( 'init', array( $this, 'register_with_qtap' ), 20 );
-        
-        // Admin menu
-        add_action( 'admin_menu', array( $this, 'add_admin_menu' ), 20 );
-    }
-
-    /**
-     * Register with both qTap App and fallback dashboards.
-     */
-    public function register_with_qtap() {
-        // qTap App dashboard (when installed)
-        if ( function_exists( 'kdc_qtap_register_plugin' ) ) {
-            kdc_qtap_register_plugin(
-                array(
-                    'id'           => 'email',
-                    'name'         => __( 'Email', 'kdc-qtap-email' ),
-                    'description'  => __( 'SMTP email with logging and templates.', 'kdc-qtap-email' ),
-                    'icon'         => '📧',
-                    'settings_url' => admin_url( 'admin.php?page=kdc-qtap-email' ),
-                    'version'      => '1.0.0',
-                    'is_active'    => true,
-                    'priority'     => 30,
-                    'category'     => 'communication',
-                )
-            );
-        }
-
-        // Fallback dashboard (when qTap App NOT installed)
-        add_filter( 'kdc_qtap_fallback_dashboard_cards', array( $this, 'register_fallback_card' ) );
-    }
-
-    /**
-     * Register card for fallback dashboard.
-     */
-    public function register_fallback_card( $cards ) {
-        $cards['email'] = array(
-            'id'           => 'email',
-            'name'         => __( 'Email', 'kdc-qtap-email' ),
-            'description'  => __( 'SMTP email with logging and templates.', 'kdc-qtap-email' ),
-            'icon'         => '📧',
-            'settings_url' => admin_url( 'admin.php?page=kdc-qtap-email' ),
-            'version'      => '1.0.0',
-            'is_active'    => true,
-            'priority'     => 30,
-        );
-        return $cards;
-    }
 }
 ```
 
 ### Dashboard Appearance
 
-When registered, the app appears as a card on the qTap Dashboard (or fallback):
+When registered, the app appears as a card on the qTap Dashboard:
 
 ```
 ┌─────────────────────────────┐
@@ -773,8 +780,6 @@ When registered, the app appears as a card on the qTap Dashboard (or fallback):
 │  [Settings]      [Active]   │
 └─────────────────────────────┘
 ```
-
-The fallback dashboard displays all registered cards in a responsive grid layout.
 
 ---
 
@@ -1165,7 +1170,7 @@ Before deploying, test:
 ### Basic Functionality
 - [ ] Plugin activates without errors
 - [ ] Plugin works with qTap App installed
-- [ ] Plugin works WITHOUT qTap App (standalone)
+- [ ] Plugin shows admin notice when qTap App is not active
 - [ ] Settings save correctly
 - [ ] Settings display correctly after save
 - [ ] All tabs navigate correctly

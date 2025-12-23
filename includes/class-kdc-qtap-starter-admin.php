@@ -113,7 +113,8 @@ class KDC_qTap_Starter_Admin {
 	 * @since 1.0.0
 	 */
 	private function init_hooks() {
-		add_action( 'admin_menu', array( $this, 'add_admin_menu' ), 20 );
+		// Use qTap App's admin menu hook (requires qTap App).
+		add_action( 'kdc_qtap_admin_menu', array( $this, 'add_admin_menu' ), 10, 2 );
 		add_action( 'admin_enqueue_scripts', array( $this, 'enqueue_admin_assets' ) );
 		add_action( 'admin_init', array( $this, 'handle_settings_save' ) );
 		add_action( 'admin_init', array( $this, 'handle_export' ) );
@@ -122,28 +123,20 @@ class KDC_qTap_Starter_Admin {
 	}
 
 	/**
-	 * Check if qTap App is providing the parent menu.
-	 *
-	 * @since  1.0.0
-	 * @return bool
-	 */
-	private function has_qtap_parent() {
-		return kdc_qtap_parent_is_active();
-	}
-
-	/**
-	 * Add admin menu.
+	 * Add admin menu as submenu of qTap App.
 	 *
 	 * @since 1.0.0
+	 * @since 1.2.0 Now receives parent_slug and capability from qTap App hook.
+	 *
+	 * @param string $parent_slug The parent menu slug (kdc-qtap).
+	 * @param string $capability  The required capability.
 	 */
-	public function add_admin_menu() {
-		$parent_slug = kdc_qtap_ensure_fallback_menu();
-
+	public function add_admin_menu( $parent_slug, $capability ) {
 		add_submenu_page(
 			$parent_slug,
 			__( 'Starter Settings', 'kdc-qtap-starter' ),
 			__( 'Starter', 'kdc-qtap-starter' ),
-			'manage_options',
+			$capability,
 			self::PAGE_SLUG,
 			array( $this, 'render_settings_page' )
 		);
