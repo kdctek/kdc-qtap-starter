@@ -611,36 +611,83 @@ if($condition){
 - Check capabilities before ALL admin actions
 - Use `$wpdb->prepare()` for ALL database queries
 
-**⚠️ Translation Loading (WordPress 6.7+):**
+**⚠️ Translation Loading (WordPress 6.7+) - CRITICAL:**
 
-WordPress 6.7+ requires translations to load AFTER the `init` action. Never call `__()`, `_e()`, `esc_html__()`, etc. in:
+WordPress 6.7+ requires translations to load AFTER the `init` action. The error:
+```
+Translation loading for the `kdc-qtap-{slug}` domain was triggered too early.
+```
+
+**Never call `__()`, `_e()`, `esc_html__()`, etc. in:**
 - Class constructors that run on plugin load
+- Property initializations
 - Global scope or constants
 - Anything that executes before `init` hook
 
+**The Problem - Tabs initialized in constructor:**
 ```php
 // ❌ WRONG - Called in constructor before init
+private $tabs = array();  // Property
+
 private function __construct() {
+    $this->init_tabs();  // Called too early!
+    $this->init_hooks();
+}
+
+private function init_tabs() {
     $this->tabs = array(
         'general' => __( 'General', 'my-plugin' ), // ERROR!
     );
 }
+```
 
+**The Solution - Lazy initialization:**
+```php
 // ✅ CORRECT - Lazy initialization (called only when needed)
+private $tabs = null;  // Start as null
+
+private function __construct() {
+    $this->init_hooks();  // No translations here!
+}
+
 private function get_tabs() {
     if ( null === $this->tabs ) {
         $this->tabs = array(
-            'general' => __( 'General', 'my-plugin' ),
+            'general'       => __( 'General', 'my-plugin' ),
+            'import-export' => __( 'Import / Export', 'my-plugin' ),
+            'data'          => __( 'Data Management', 'my-plugin' ),
         );
+        $this->tabs = apply_filters( 'my_plugin_admin_tabs', $this->tabs );
     }
     return $this->tabs;
 }
 
-// ✅ CORRECT - Hooked to init or later
-add_action( 'init', function() {
-    $label = __( 'My Label', 'my-plugin' );
-} );
+// Then replace ALL $this->tabs with $this->get_tabs()
+// EXCEPT inside the get_tabs() method itself
 ```
+
+**Quick Fix Steps for Existing Child Plugins:**
+
+1. **Change property:** `private $tabs = array();` → `private $tabs = null;`
+
+2. **Remove from constructor:** Delete `$this->init_tabs();` line
+
+3. **Rename method:** `init_tabs()` → `get_tabs()`
+
+4. **Add lazy loading wrapper:**
+   ```php
+   private function get_tabs() {
+       if ( null === $this->tabs ) {
+           // existing code here
+       }
+       return $this->tabs;
+   }
+   ```
+
+5. **Find & Replace:** `$this->tabs` → `$this->get_tabs()` (except inside get_tabs())
+
+**Files to fix in each child plugin:**
+- `includes/class-kdc-qtap-{slug}-admin.php`
 
 **Documentation:**
 - PHPDoc blocks for all functions, classes, and files

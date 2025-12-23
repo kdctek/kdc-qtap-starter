@@ -183,6 +183,11 @@ zip -r kdc-qtap-starter.zip kdc-qtap-starter \
 
 ## Changelog
 
+### 1.1.0
+- Expanded WordPress 6.7+ translation loading documentation with complete fix steps
+- Added quick fix guide for existing child plugins
+- Improved troubleshooting guidance for `_load_textdomain_just_in_time` error
+
 ### 1.0.9
 - Added comprehensive qTap Dashboard Registration documentation to CLAUDE.md
 - Documented `kdc_qtap_register_plugin()` function and all parameters
