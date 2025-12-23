@@ -183,6 +183,11 @@ zip -r kdc-qtap-starter.zip kdc-qtap-starter \
 
 ## Changelog
 
+### 1.0.9
+- Added comprehensive qTap Dashboard Registration documentation to CLAUDE.md
+- Documented `kdc_qtap_register_plugin()` function and all parameters
+- Added App Card appearance examples and priority guidelines
+
 ### 1.0.8
 - **FIX:** WordPress 6.7+ translation loading error (`_load_textdomain_just_in_time`)
 - Changed tabs initialization to lazy loading (only when needed)

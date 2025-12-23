@@ -328,6 +328,195 @@ When Claude creates files, ensure they follow this pattern:
 
 ---
 
+## qTap Dashboard Registration
+
+When qTap App (the main dashboard plugin) is installed, child plugins can register themselves to appear as **App Cards** on the qTap Dashboard.
+
+### Registration Mechanism
+
+The main qTap App plugin provides a global function `kdc_qtap_register_plugin()` that child plugins use to register themselves.
+
+**How It Works:**
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│                      qTap App (Parent)                       │
+│  ┌─────────────────────────────────────────────────────────┐│
+│  │  Provides: kdc_qtap_register_plugin() function          ││
+│  │  Stores: Registered apps in global array                ││
+│  │  Displays: App Cards on Dashboard                       ││
+│  └─────────────────────────────────────────────────────────┘│
+│                            ▲                                 │
+│           ┌────────────────┼────────────────┐               │
+│           │                │                │               │
+│  ┌────────┴───────┐ ┌──────┴──────┐ ┌──────┴──────┐        │
+│  │ kdc-qtap-mobile│ │kdc-qtap-email│ │kdc-qtap-school│       │
+│  │   (Child App)  │ │  (Child App) │ │  (Child App) │       │
+│  └────────────────┘ └──────────────┘ └──────────────┘       │
+└─────────────────────────────────────────────────────────────┘
+```
+
+### Registration Code
+
+Add this to your main plugin class:
+
+```php
+/**
+ * Initialize hooks.
+ */
+private function init_hooks() {
+    // Register with qTap App dashboard.
+    add_action( 'init', array( $this, 'register_with_qtap' ), 20 );
+    
+    // ... other hooks
+}
+
+/**
+ * Register this app with qTap App dashboard.
+ *
+ * @since 1.0.0
+ */
+public function register_with_qtap() {
+    // Only register if qTap App is active.
+    if ( ! function_exists( 'kdc_qtap_register_plugin' ) ) {
+        return;
+    }
+
+    kdc_qtap_register_plugin(
+        array(
+            'id'           => 'my-app',                                    // Unique ID (slug)
+            'name'         => __( 'My App', 'kdc-qtap-my-app' ),           // Display name
+            'description'  => __( 'Description of what app does.', 'kdc-qtap-my-app' ),
+            'icon'         => '📧',                                        // Emoji or dashicon
+            'settings_url' => admin_url( 'admin.php?page=kdc-qtap-my-app' ),
+            'version'      => KDC_QTAP_MY_APP_VERSION,
+            'is_active'    => true,                                        // App status
+            'priority'     => 50,                                          // Display order (lower = first)
+        )
+    );
+}
+```
+
+### Registration Parameters
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `id` | string | ✅ | Unique identifier (slug), e.g., `'mobile'`, `'email'`, `'school'` |
+| `name` | string | ✅ | Display name shown on App Card, e.g., `'Mobile'`, `'Email'` |
+| `description` | string | ✅ | Short description shown on App Card |
+| `icon` | string | ✅ | Emoji (e.g., `'📧'`) or Dashicon class (e.g., `'dashicons-email'`) |
+| `settings_url` | string | ✅ | URL to the app's settings page |
+| `version` | string | ❌ | Plugin version (shown on card) |
+| `is_active` | bool | ❌ | Whether app is active, default `true` |
+| `priority` | int | ❌ | Display order on dashboard, default `50` (lower = first) |
+| `category` | string | ❌ | Category for grouping: `'woocommerce'`, `'communication'`, `'security'`, `'analytics'`, `'utilities'` |
+
+### Icon Options
+
+**Emoji Icons (Recommended):**
+```php
+'icon' => '📧',  // Email
+'icon' => '📱',  // Mobile
+'icon' => '🏫',  // School
+'icon' => '🔒',  // Security
+'icon' => '📊',  // Analytics
+```
+
+**Dashicon Icons:**
+```php
+'icon' => 'dashicons-email',
+'icon' => 'dashicons-smartphone',
+'icon' => 'dashicons-welcome-learn-more',
+'icon' => 'dashicons-lock',
+'icon' => 'dashicons-chart-bar',
+```
+
+### Priority Values
+
+| Priority | Usage |
+|----------|-------|
+| 10-30 | Core/essential apps (shown first) |
+| 40-60 | Standard apps (default) |
+| 70-90 | Utility/secondary apps |
+| 100+ | Low priority apps |
+
+### Standalone Mode
+
+When qTap App is NOT installed, the registration function won't exist. The child plugin should:
+
+1. Check if `kdc_qtap_register_plugin()` exists before calling
+2. Use the shared fallback menu for admin navigation
+3. Work completely independently
+
+```php
+public function register_with_qtap() {
+    // Gracefully skip if qTap App not installed
+    if ( ! function_exists( 'kdc_qtap_register_plugin' ) ) {
+        return;  // Plugin works standalone
+    }
+
+    // Register with dashboard
+    kdc_qtap_register_plugin( array( ... ) );
+}
+```
+
+### Complete Example
+
+```php
+<?php
+class KDC_qTap_Email {
+
+    public function __construct() {
+        $this->init_hooks();
+    }
+
+    private function init_hooks() {
+        // Register with qTap Dashboard at priority 20 (after qTap App initializes)
+        add_action( 'init', array( $this, 'register_with_qtap' ), 20 );
+        
+        // Admin menu
+        add_action( 'admin_menu', array( $this, 'add_admin_menu' ), 20 );
+    }
+
+    public function register_with_qtap() {
+        if ( ! function_exists( 'kdc_qtap_register_plugin' ) ) {
+            return;
+        }
+
+        kdc_qtap_register_plugin(
+            array(
+                'id'           => 'email',
+                'name'         => __( 'Email', 'kdc-qtap-email' ),
+                'description'  => __( 'SMTP email with logging and templates.', 'kdc-qtap-email' ),
+                'icon'         => '📧',
+                'settings_url' => admin_url( 'admin.php?page=kdc-qtap-email' ),
+                'version'      => '1.0.0',
+                'is_active'    => true,
+                'priority'     => 30,
+                'category'     => 'communication',
+            )
+        );
+    }
+}
+```
+
+### Dashboard Appearance
+
+When registered, the app appears as a card on the qTap Dashboard:
+
+```
+┌─────────────────────────────┐
+│  📧  Email           v1.0.0 │
+│                             │
+│  SMTP email with logging    │
+│  and templates.             │
+│                             │
+│  [Settings] [Docs]          │
+└─────────────────────────────┘
+```
+
+---
+
 ## Plugin Header Convention
 
 All qTap App child plugins MUST use the following header format:
